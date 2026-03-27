@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f3efe5">
+  <title>Orbit Scientific Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="calculator-panel" aria-label="Scientific calculator">
+      <aside class="insight-panel" aria-label="Recent calculations and shortcuts">
+        <div class="sidebar-card">
+          <div class="sidebar-header">
+            <div>
+              <p class="eyebrow">Recent work</p>
+              <h2>History</h2>
+            </div>
+            <button class="ghost-button" id="clear-history" type="button">Clear</button>
+          </div>
+          <ol class="history-list" id="history-list" aria-live="polite"></ol>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-header">
+            <div>
+              <p class="eyebrow">Desktop helpers</p>
+              <h2>Shortcuts</h2>
+            </div>
+            <button class="ghost-button" id="shortcut-toggle" type="button" aria-expanded="false">Show</button>
+          </div>
+          <div class="shortcut-panel" id="shortcut-panel" hidden>
+            <p>Use the keyboard when you want speed without losing the touch UI.</p>
+            <ul class="shortcut-list">
+              <li><span>Enter / =</span><span>Evaluate</span></li>
+              <li><span>Backspace</span><span>Delete one</span></li>
+              <li><span>Delete / C</span><span>Clear all</span></li>
+              <li><span>0-9 . + - * /</span><span>Build expression</span></li>
+              <li><span>( and )</span><span>Group terms</span></li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+      <section class="main-panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Responsive web app</p>
+            <h1>Orbit Scientific</h1>
+          </div>
+          <div class="header-actions">
+            <button class="ghost-button" id="install-app" type="button" hidden>Install</button>
+            <button class="theme-chip" id="angle-toggle" type="button" aria-pressed="false">RAD</button>
+          </div>
+        </div>
+
+        <section class="display-card">
+          <div class="status-row">
+            <span id="mode-indicator">Radians</span>
+            <span id="memory-indicator">Memory: 0</span>
+          </div>
+          <div class="history" id="history" aria-live="polite">Ready</div>
+          <label class="sr-only" for="expression">Expression</label>
+          <input
+            id="expression"
+            class="expression-input"
+            type="text"
+            inputmode="none"
+            autocomplete="off"
+            spellcheck="false"
+            aria-describedby="history"
+            readonly
+            value="0"
+          >
+          <div class="result-row">
+            <span>Result</span>
+            <output id="result" aria-live="polite">0</output>
+          </div>
+        </section>
+
+        <section class="quick-actions" aria-label="Memory controls">
+          <button type="button" data-action="mc">MC</button>
+          <button type="button" data-action="mr">MR</button>
+          <button type="button" data-action="mplus">M+</button>
+          <button type="button" data-action="mminus">M-</button>
+          <button type="button" data-action="ans">ANS</button>
+        </section>
+
+        <section class="keyboard" aria-label="Calculator keypad">
+          <button type="button" class="key util" data-action="clear">AC</button>
+          <button type="button" class="key util" data-action="delete">DEL</button>
+          <button type="button" class="key util" data-value="(">(</button>
+          <button type="button" class="key util" data-value=")">)</button>
+          <button type="button" class="key sci" data-fn="square">x²</button>
+          <button type="button" class="key sci" data-fn="sqrt">√x</button>
+
+          <button type="button" class="key sci" data-fn="sin">sin</button>
+          <button type="button" class="key sci" data-fn="cos">cos</button>
+          <button type="button" class="key sci" data-fn="tan">tan</button>
+          <button type="button" class="key sci" data-fn="asin">asin</button>
+          <button type="button" class="key sci" data-fn="acos">acos</button>
+          <button type="button" class="key sci" data-fn="atan">atan</button>
+
+          <button type="button" class="key sci" data-fn="ln">ln</button>
+          <button type="button" class="key sci" data-fn="log">log</button>
+          <button type="button" class="key sci" data-fn="exp">exp</button>
+          <button type="button" class="key sci" data-fn="pow">xʸ</button>
+          <button type="button" class="key sci" data-constant="pi">π</button>
+          <button type="button" class="key sci" data-constant="e">e</button>
+
+          <button type="button" class="key number" data-value="7">7</button>
+          <button type="button" class="key number" data-value="8">8</button>
+          <button type="button" class="key number" data-value="9">9</button>
+          <button type="button" class="key operator" data-value="/">÷</button>
+          <button type="button" class="key sci" data-fn="percent">%</button>
+          <button type="button" class="key sci" data-fn="factorial">n!</button>
+
+          <button type="button" class="key number" data-value="4">4</button>
+          <button type="button" class="key number" data-value="5">5</button>
+          <button type="button" class="key number" data-value="6">6</button>
+          <button type="button" class="key operator" data-value="*">×</button>
+          <button type="button" class="key sci" data-fn="inverse">1/x</button>
+          <button type="button" class="key sci" data-fn="abs">|x|</button>
+
+          <button type="button" class="key number" data-value="1">1</button>
+          <button type="button" class="key number" data-value="2">2</button>
+          <button type="button" class="key number" data-value="3">3</button>
+          <button type="button" class="key operator" data-value="-">-</button>
+          <button type="button" class="key util" data-action="negate">+/-</button>
+          <button type="button" class="key sci" data-fn="rand">rand</button>
+
+          <button type="button" class="key number span-2" data-value="0">0</button>
+          <button type="button" class="key number" data-value=".">.</button>
+          <button type="button" class="key operator" data-value="+">+</button>
+          <button type="button" class="key accent" data-action="equals">=</button>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
