@@ -380,6 +380,10 @@ h1 {
     flex-direction: column;
   }
 
+  .edit-row {
+    justify-content: flex-start;
+  }
+
   .voice-status {
     text-align: left;
   }
@@ -437,7 +441,24 @@ h1 {
   margin-top: 0.85rem;
 }
 
+.edit-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-top: 0.7rem;
+}
+
+.edit-button {
+  padding-inline: 0.9rem;
+}
+
 .voice-button[aria-pressed="true"] {
+  background: #21352c;
+  color: #f8f6ef;
+}
+
+.edit-button[aria-pressed="true"] {
   background: #21352c;
   color: #f8f6ef;
 }

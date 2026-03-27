@@ -73,6 +73,11 @@
             <span class="voice-status" id="voice-status">Voice input ready</span>
           </div>
           <div class="history" id="history" aria-live="polite">Ready</div>
+          <div class="edit-row" aria-label="Expression editing controls">
+            <button class="ghost-button edit-button" id="edit-toggle" type="button" aria-pressed="false">Edit</button>
+            <button class="ghost-button edit-button" id="display-delete" type="button">Delete</button>
+            <button class="ghost-button edit-button" id="display-clear" type="button">Clear</button>
+          </div>
           <label class="sr-only" for="expression">Expression</label>
           <input
             id="expression"

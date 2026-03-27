@@ -14,6 +14,9 @@ const installButton = document.getElementById("install-app");
 const voiceToggle = document.getElementById("voice-toggle");
 const voiceStatus = document.getElementById("voice-status");
 const primaryResult = document.getElementById("primary-result");
+const editToggle = document.getElementById("edit-toggle");
+const displayDelete = document.getElementById("display-delete");
+const displayClear = document.getElementById("display-clear");
 
 let expression = "0";
 let lastAnswer = 0;
@@ -25,6 +28,7 @@ const historyLimit = 10;
 let calculationHistory = loadHistory();
 let recognition = null;
 let isListening = false;
+let isEditMode = false;
 
 const previewReplacements = [
   [/Math\.PI/g, "π"],
@@ -137,6 +141,40 @@ const spokenNumberWords = {
   thousand: 1000
 };
 
+const bareVoiceFunctions = {
+  sin: 'safeTrig("sin",',
+  sine: 'safeTrig("sin",',
+  cos: 'safeTrig("cos",',
+  cosine: 'safeTrig("cos",',
+  tan: 'safeTrig("tan",',
+  tangent: 'safeTrig("tan",',
+  cot: 'safeTrig("cot",',
+  cotangent: 'safeTrig("cot",',
+  sec: 'safeTrig("sec",',
+  secant: 'safeTrig("sec",',
+  csc: 'safeTrig("csc",',
+  cosec: 'safeTrig("csc",',
+  cosecant: 'safeTrig("csc",',
+  asin: 'safeTrig("asin",',
+  acos: 'safeTrig("acos",',
+  atan: 'safeTrig("atan",',
+  acot: 'safeTrig("acot",',
+  asec: 'safeTrig("asec",',
+  acsc: 'safeTrig("acsc",',
+  ln: "Math.log(",
+  log: "Math.log10(",
+  logarithm: "Math.log10(",
+  sqrt: "Math.sqrt(",
+  root: "Math.sqrt(",
+  cbrt: "cbrt(",
+  abs: "Math.abs(",
+  modulus: "Math.abs(",
+  mod: "Math.abs(",
+  factorial: "factorial(",
+  percent: "percent(",
+  exp: "Math.exp("
+};
+
 function updateDisplay(previewValue = null) {
   expressionInput.value = formatPreview(expression);
   const visibleResult = previewValue ?? formatNumber(lastAnswer);
@@ -146,6 +184,8 @@ function updateDisplay(previewValue = null) {
   modeIndicator.textContent = isDegreeMode ? "Degrees" : "Radians";
   angleToggle.textContent = isDegreeMode ? "DEG" : "RAD";
   angleToggle.setAttribute("aria-pressed", String(isDegreeMode));
+  editToggle.setAttribute("aria-pressed", String(isEditMode));
+  editToggle.textContent = isEditMode ? "Done" : "Edit";
 }
 
 function setVoiceStatus(message) {
@@ -156,6 +196,20 @@ function setListeningState(listening) {
   isListening = listening;
   voiceToggle.setAttribute("aria-pressed", String(listening));
   voiceToggle.textContent = listening ? "Listening..." : "Voice Input";
+}
+
+function setEditMode(enabled) {
+  isEditMode = enabled;
+  expressionInput.readOnly = !enabled;
+  expressionInput.inputMode = enabled ? "text" : "none";
+  if (enabled) {
+    expressionInput.focus();
+    const cursor = expressionInput.value.length;
+    expressionInput.setSelectionRange(cursor, cursor);
+  } else {
+    expressionInput.blur();
+  }
+  updateDisplay(tryEvaluate(expression).ok ? formatNumber(tryEvaluate(expression).value) : "...");
 }
 
 function formatPreview(value) {
@@ -359,6 +413,34 @@ function normalizeSpokenNumberPhrases(input) {
   return normalized.join(" ");
 }
 
+function normalizeSpeechAliases(input) {
+  return input
+    .replace(/\bco sign\b|\bcos sign\b|\bco sine\b/g, "cosine")
+    .replace(/\bsyne\b/g, "sine")
+    .replace(/\btanjent\b/g, "tangent")
+    .replace(/\bco tangent\b/g, "cotangent")
+    .replace(/\bsea cant\b|\bsee cant\b/g, "secant")
+    .replace(/\bco sec\b|\bco-secant\b|\bco secant\b/g, "cosecant")
+    .replace(/\barc tan\b/g, "arc tangent")
+    .replace(/\barc cos\b/g, "arc cosine")
+    .replace(/\barc sin\b/g, "arc sine");
+}
+
+function compactParsedExpression(input) {
+  let compact = input;
+  compact = compact.replace(/\(\s+/g, "(");
+  compact = compact.replace(/\s+\)/g, ")");
+  compact = compact.replace(/\s*,\s*/g, ", ");
+  compact = compact.replace(/(\d)\s*\.\s*(\d)/g, "$1.$2");
+  compact = compact.replace(/(^|[^\d])\.\s*(\d)/g, "$10.$2");
+  compact = compact.replace(/\+\s+(\d)/g, "+$1");
+  compact = compact.replace(/-\s+(\d)/g, "-$1");
+  compact = compact.replace(/\*\s+(\d)/g, "*$1");
+  compact = compact.replace(/\/\s+(\d)/g, "/$1");
+  compact = compact.replace(/\s+/g, " ").trim();
+  return compact;
+}
+
 function factorial(value) {
   if (!Number.isInteger(value) || value < 0) {
     throw new Error("Factorial is defined for non-negative integers only.");
@@ -446,6 +528,7 @@ function parseSpokenMath(transcript) {
 
   parsed = parsed.replace(/[?,]/g, " ");
   parsed = parsed.replace(/％/g, "%");
+  parsed = normalizeSpeechAliases(parsed);
   parsed = parsed.replace(/\bwhat is\b|\bwhat's\b|\bhow much is\b|\bhow much\b|\bplease\b|\bcan you\b|\bcould you\b|\bfind\b|\btell me\b|\bsolve\b|\bgive me\b/g, " ");
   parsed = parsed.replace(/\bthe result of\b|\bresult of\b|\bvalue of\b/g, " ");
   parsed = parsed.replace(/\bis\b/g, " ");
@@ -497,21 +580,36 @@ function parseSpokenMath(transcript) {
   parsed = parsed.replace(/squared/g, "**2");
   parsed = parsed.replace(/cubed/g, "**3");
   parsed = parsed.replace(/raised to/g, "**");
+  parsed = parsed.replace(/\bsine\s+(?=\d|\()/g, 'safeTrig("sin", ');
   parsed = parsed.replace(/\bsin\s+(?=\d|\()/g, 'safeTrig("sin", ');
+  parsed = parsed.replace(/\bcosine\s+(?=\d|\()/g, 'safeTrig("cos", ');
   parsed = parsed.replace(/\bcos\s+(?=\d|\()/g, 'safeTrig("cos", ');
+  parsed = parsed.replace(/\btangent\s+(?=\d|\()/g, 'safeTrig("tan", ');
   parsed = parsed.replace(/\btan\s+(?=\d|\()/g, 'safeTrig("tan", ');
+  parsed = parsed.replace(/\bcotangent\s+(?=\d|\()/g, 'safeTrig("cot", ');
   parsed = parsed.replace(/\bcot\s+(?=\d|\()/g, 'safeTrig("cot", ');
+  parsed = parsed.replace(/\bsecant\s+(?=\d|\()/g, 'safeTrig("sec", ');
   parsed = parsed.replace(/\bsec\s+(?=\d|\()/g, 'safeTrig("sec", ');
+  parsed = parsed.replace(/\bcosecant\s+(?=\d|\()/g, 'safeTrig("csc", ');
   parsed = parsed.replace(/\b(cosec|csc)\s+(?=\d|\()/g, 'safeTrig("csc", ');
+  parsed = parsed.replace(/\barc sine\s+(?=\d|\()/g, 'safeTrig("asin", ');
   parsed = parsed.replace(/\basin\s+(?=\d|\()/g, 'safeTrig("asin", ');
+  parsed = parsed.replace(/\barc cosine\s+(?=\d|\()/g, 'safeTrig("acos", ');
   parsed = parsed.replace(/\bacos\s+(?=\d|\()/g, 'safeTrig("acos", ');
+  parsed = parsed.replace(/\barc tangent\s+(?=\d|\()/g, 'safeTrig("atan", ');
   parsed = parsed.replace(/\batan\s+(?=\d|\()/g, 'safeTrig("atan", ');
+  parsed = parsed.replace(/\barc cotangent\s+(?=\d|\()/g, 'safeTrig("acot", ');
   parsed = parsed.replace(/\bacot\s+(?=\d|\()/g, 'safeTrig("acot", ');
+  parsed = parsed.replace(/\barc secant\s+(?=\d|\()/g, 'safeTrig("asec", ');
   parsed = parsed.replace(/\basec\s+(?=\d|\()/g, 'safeTrig("asec", ');
+  parsed = parsed.replace(/\barc cosecant\s+(?=\d|\()/g, 'safeTrig("acsc", ');
   parsed = parsed.replace(/\b(acosec|acsc)\s+(?=\d|\()/g, 'safeTrig("acsc", ');
   parsed = parsed.replace(/\bln\s+(?=\d|\()/g, "Math.log ");
   parsed = parsed.replace(/\blog\s+(?=\d|\()/g, "Math.log10 ");
+  parsed = parsed.replace(/\bnatural log\s+(?=\d|\()/g, "Math.log ");
+  parsed = parsed.replace(/\bsquare root\s+(?=\d|\()/g, "Math.sqrt ");
   parsed = parsed.replace(/\bsqrt\s+(?=\d|\()/g, "Math.sqrt ");
+  parsed = parsed.replace(/\bcube root\s+(?=\d|\()/g, "cbrt ");
   parsed = parsed.replace(/multiplied with/g, "*");
   parsed = parsed.replace(/multiplied/g, "*");
   parsed = parsed.replace(/added to/g, "+");
@@ -523,13 +621,20 @@ function parseSpokenMath(transcript) {
   parsed = parsed.replace(/\s+percentage\b/g, " percent");
   parsed = parsed.replace(/\btime\b/g, "*");
   parsed = parsed.replace(/\btimes\b/g, "*");
-  parsed = parsed.replace(/\s+/g, " ").trim();
+  parsed = compactParsedExpression(parsed);
 
   const tokens = parsed.split(" ").filter(Boolean);
   const output = [];
   const stack = [];
+  const unknownWords = [];
 
   tokens.forEach(token => {
+    if (bareVoiceFunctions[token]) {
+      output.push(bareVoiceFunctions[token]);
+      stack.push(")");
+      return;
+    }
+
     if (
       token === "Math.sqrt" ||
       token === "Math.log" ||
@@ -552,13 +657,18 @@ function parseSpokenMath(transcript) {
     }
 
     if (/^[a-z]+$/i.test(token) && token !== "ans") {
+      unknownWords.push(token);
       return;
     }
 
     output.push(token);
   });
 
-  return `${output.join(" ")}${stack.reverse().join("")}`.trim();
+  if (unknownWords.length > 0) {
+    return "";
+  }
+
+  return compactParsedExpression(`${output.join(" ")}${stack.reverse().join("")}`.trim());
 }
 
 function initializeVoiceRecognition() {
@@ -800,6 +910,44 @@ voiceToggle.addEventListener("click", () => {
   }
 
   recognition.start();
+});
+
+editToggle.addEventListener("click", () => {
+  setEditMode(!isEditMode);
+});
+
+displayDelete.addEventListener("click", () => {
+  backspace();
+  if (isEditMode) {
+    expressionInput.focus();
+  }
+});
+
+displayClear.addEventListener("click", () => {
+  clearExpression();
+  if (isEditMode) {
+    expressionInput.focus();
+  }
+});
+
+expressionInput.addEventListener("input", event => {
+  if (!isEditMode) {
+    return;
+  }
+  expression = event.target.value.trim() || "0";
+  updateLivePreview();
+});
+
+expressionInput.addEventListener("keydown", event => {
+  if (!isEditMode) {
+    return;
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    commitResult();
+    setEditMode(false);
+  }
 });
 
 window.addEventListener("beforeinstallprompt", event => {
