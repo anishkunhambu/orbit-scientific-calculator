@@ -235,13 +235,24 @@ h1 {
   border: 0;
   padding: 0;
   background: transparent;
-  font-size: clamp(2rem, 5vw, 3.6rem);
+  font-size: clamp(1.15rem, 3vw, 1.7rem);
   color: var(--text);
   text-align: right;
+  opacity: 0.8;
 }
 
 .expression-input:focus {
   outline: none;
+}
+
+.primary-result {
+  margin-top: 0.35rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  line-height: 1.1;
+  text-align: right;
+  color: var(--text);
+  word-break: break-word;
 }
 
 .result-row {
@@ -251,7 +262,8 @@ h1 {
 
 #result {
   color: var(--text);
-  font-size: 1.2rem;
+  font-size: 1rem;
+  opacity: 0.75;
 }
 
 .quick-actions {
@@ -378,6 +390,14 @@ h1 {
 
   .display-card {
     padding: 0.9rem;
+  }
+
+  .expression-input {
+    font-size: 1rem;
+  }
+
+  .primary-result {
+    font-size: clamp(2rem, 9vw, 3rem);
   }
 
   .quick-actions {

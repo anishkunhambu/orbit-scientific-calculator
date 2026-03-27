@@ -13,6 +13,7 @@ const shortcutPanel = document.getElementById("shortcut-panel");
 const installButton = document.getElementById("install-app");
 const voiceToggle = document.getElementById("voice-toggle");
 const voiceStatus = document.getElementById("voice-status");
+const primaryResult = document.getElementById("primary-result");
 
 let expression = "0";
 let lastAnswer = 0;
@@ -125,7 +126,9 @@ const spokenNumberWords = {
 
 function updateDisplay(previewValue = null) {
   expressionInput.value = formatPreview(expression);
-  resultOutput.textContent = previewValue ?? formatNumber(lastAnswer);
+  const visibleResult = previewValue ?? formatNumber(lastAnswer);
+  primaryResult.textContent = visibleResult;
+  resultOutput.textContent = visibleResult;
   memoryIndicator.textContent = `Memory: ${formatNumber(memoryValue)}`;
   modeIndicator.textContent = isDegreeMode ? "Degrees" : "Radians";
   angleToggle.textContent = isDegreeMode ? "DEG" : "RAD";
@@ -261,7 +264,7 @@ function setExpression(nextExpression) {
   updateLivePreview();
 }
 
-function appendVoiceExpression(transcriptExpression) {
+function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
   if (!transcriptExpression) {
     return;
   }
@@ -277,10 +280,23 @@ function appendVoiceExpression(transcriptExpression) {
     return;
   }
 
+  const evaluated = tryEvaluate(normalized);
   setExpression(normalized);
-  if (!/[a-z]/i.test(normalized)) {
+
+  if (evaluated.ok) {
     commitResult();
+    if (originalTranscript) {
+      historyOutput.textContent = `Voice: ${originalTranscript}`;
+    }
+    setVoiceStatus(`Result ready for: ${originalTranscript || formatPreview(normalized)}`);
+    return;
   }
+
+  historyOutput.textContent = originalTranscript
+    ? `Voice heard: ${originalTranscript}`
+    : "Voice input captured";
+  primaryResult.textContent = "...";
+  resultOutput.textContent = "...";
 }
 
 function normalizeSpokenNumberPhrases(input) {
@@ -524,8 +540,7 @@ function initializeVoiceRecognition() {
       return;
     }
 
-    appendVoiceExpression(parsedExpression);
-    setVoiceStatus(`Heard: ${transcript}`);
+    appendVoiceExpression(parsedExpression, transcript);
   });
 
   recognition.addEventListener("error", event => {
@@ -540,6 +555,7 @@ function initializeVoiceRecognition() {
 function commitResult() {
   const evaluated = tryEvaluate(expression);
   if (!evaluated.ok) {
+    primaryResult.textContent = "Error";
     resultOutput.textContent = "Error";
     historyOutput.textContent = "Invalid expression";
     return;
