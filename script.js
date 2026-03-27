@@ -13,6 +13,8 @@ const shortcutPanel = document.getElementById("shortcut-panel");
 const installButton = document.getElementById("install-app");
 const voiceToggle = document.getElementById("voice-toggle");
 const voiceStatus = document.getElementById("voice-status");
+const voiceHeard = document.getElementById("voice-heard");
+const voiceParsed = document.getElementById("voice-parsed");
 const primaryResult = document.getElementById("primary-result");
 const editToggle = document.getElementById("edit-toggle");
 const displayDelete = document.getElementById("display-delete");
@@ -80,7 +82,7 @@ const spokenFunctionMap = [
   [/cotangent inverse of|inverse cotangent of|arc cotangent of|cot inverse of|cot^-1 of/g, 'safeTrig("acot",'],
   [/secant inverse of|inverse secant of|arc secant of|sec inverse of|sec^-1 of/g, 'safeTrig("asec",'],
   [/cosecant inverse of|inverse cosecant of|arc cosecant of|cosec inverse of|cosec^-1 of|csc inverse of|csc^-1 of/g, 'safeTrig("acsc",'],
-  [/sine of|sign of|sin of/g, 'safeTrig("sin",'],
+  [/sine of|sin of/g, 'safeTrig("sin",'],
   [/cosine of|cos of/g, 'safeTrig("cos",'],
   [/tangent of|tan of/g, 'safeTrig("tan",'],
   [/cotangent of|cot of/g, 'safeTrig("cot",'],
@@ -176,7 +178,7 @@ const bareVoiceFunctions = {
 };
 
 function updateDisplay(previewValue = null) {
-  expressionInput.value = formatPreview(expression);
+  expressionInput.value = isEditMode ? expression : formatPreview(expression);
   const visibleResult = previewValue ?? formatNumber(lastAnswer);
   primaryResult.textContent = visibleResult;
   resultOutput.textContent = visibleResult;
@@ -192,6 +194,11 @@ function setVoiceStatus(message) {
   voiceStatus.textContent = message;
 }
 
+function setVoiceDebug(heard = "-", parsed = "-") {
+  voiceHeard.textContent = `Heard: ${heard}`;
+  voiceParsed.textContent = `Parsed: ${parsed}`;
+}
+
 function setListeningState(listening) {
   isListening = listening;
   voiceToggle.setAttribute("aria-pressed", String(listening));
@@ -202,13 +209,17 @@ function setEditMode(enabled) {
   isEditMode = enabled;
   expressionInput.readOnly = !enabled;
   expressionInput.inputMode = enabled ? "text" : "none";
+  expressionInput.classList.toggle("is-editing", enabled);
   if (enabled) {
-    expressionInput.focus();
-    const cursor = expressionInput.value.length;
-    expressionInput.setSelectionRange(cursor, cursor);
-  } else {
-    expressionInput.blur();
+    updateDisplay(tryEvaluate(expression).ok ? formatNumber(tryEvaluate(expression).value) : "...");
+    requestAnimationFrame(() => {
+      expressionInput.focus();
+      const cursor = expressionInput.value.length;
+      expressionInput.setSelectionRange(cursor, cursor);
+    });
+    return;
   }
+  expressionInput.blur();
   updateDisplay(tryEvaluate(expression).ok ? formatNumber(tryEvaluate(expression).value) : "...");
 }
 
@@ -686,6 +697,7 @@ function initializeVoiceRecognition() {
   recognition.addEventListener("start", () => {
     setListeningState(true);
     setVoiceStatus("Listening for a math expression...");
+    setVoiceDebug("Listening...", "-");
   });
 
   recognition.addEventListener("result", event => {
@@ -694,6 +706,7 @@ function initializeVoiceRecognition() {
       .join(" ");
 
     const parsedExpression = parseSpokenMath(transcript);
+    setVoiceDebug(transcript || "-", parsedExpression || "Unparsed");
     if (!parsedExpression) {
       setVoiceStatus(`Couldn't parse: "${transcript}"`);
       return;
@@ -774,6 +787,26 @@ function backspace() {
   const trimmed = expression.slice(0, -1);
   expression = trimmed || "0";
   updateLivePreview();
+}
+
+function deleteFromExpressionInput() {
+  const start = expressionInput.selectionStart ?? expression.length;
+  const end = expressionInput.selectionEnd ?? expression.length;
+
+  if (start !== end) {
+    expression = `${expression.slice(0, start)}${expression.slice(end)}` || "0";
+    updateLivePreview();
+    requestAnimationFrame(() => expressionInput.setSelectionRange(start, start));
+    return;
+  }
+
+  if (start <= 0) {
+    return;
+  }
+
+  expression = `${expression.slice(0, start - 1)}${expression.slice(start)}` || "0";
+  updateLivePreview();
+  requestAnimationFrame(() => expressionInput.setSelectionRange(start - 1, start - 1));
 }
 
 function clearExpression() {
@@ -917,7 +950,11 @@ editToggle.addEventListener("click", () => {
 });
 
 displayDelete.addEventListener("click", () => {
-  backspace();
+  if (isEditMode) {
+    deleteFromExpressionInput();
+  } else {
+    backspace();
+  }
   if (isEditMode) {
     expressionInput.focus();
   }
@@ -962,6 +999,10 @@ window.addEventListener("appinstalled", () => {
 });
 
 window.addEventListener("keydown", event => {
+  if (isEditMode || event.target === expressionInput) {
+    return;
+  }
+
   const allowedKeys = "0123456789+-*/().";
   if (allowedKeys.includes(event.key)) {
     appendToExpression(event.key);
@@ -986,7 +1027,26 @@ window.addEventListener("keydown", event => {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {
+    navigator.serviceWorker.register("./sw.js").then(registration => {
+      registration.update();
+
+      if (registration.waiting) {
+        setVoiceStatus("Update available. Refresh once for the newest version.");
+      }
+
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        if (!worker) {
+          return;
+        }
+
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            setVoiceStatus("App updated. Refresh once to load the latest build.");
+          }
+        });
+      });
+    }).catch(() => {
       historyOutput.textContent = historyOutput.textContent || "Service worker registration failed.";
     });
   });
@@ -994,4 +1054,5 @@ if ("serviceWorker" in navigator) {
 
 initializeVoiceRecognition();
 renderHistory();
+setVoiceDebug();
 updateDisplay("0");

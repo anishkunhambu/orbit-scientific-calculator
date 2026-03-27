@@ -1,4 +1,4 @@
-const CACHE_NAME = "orbit-scientific-v3";
+const CACHE_NAME = "orbit-scientific-v4";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -30,6 +30,28 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  const requestUrl = new URL(event.request.url);
+  const isNavigationRequest =
+    event.request.mode === "navigate" ||
+    (event.request.headers.get("accept") || "").includes("text/html");
+
+  if (isNavigationRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", responseClone));
+          return response;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
+  if (requestUrl.origin !== self.location.origin) {
     return;
   }
 
