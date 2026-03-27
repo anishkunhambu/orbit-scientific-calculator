@@ -33,9 +33,15 @@ const previewReplacements = [
   [/Math\.sin\(/g, "sin("],
   [/Math\.cos\(/g, "cos("],
   [/Math\.tan\(/g, "tan("],
+  [/cot\(/g, "cot("],
+  [/sec\(/g, "sec("],
+  [/csc\(/g, "csc("],
   [/Math\.asin\(/g, "asin("],
   [/Math\.acos\(/g, "acos("],
   [/Math\.atan\(/g, "atan("],
+  [/acot\(/g, "acot("],
+  [/asec\(/g, "asec("],
+  [/acsc\(/g, "acsc("],
   [/Math\.log10\(/g, "log("],
   [/Math\.log\(/g, "ln("],
   [/Math\.exp\(/g, "exp("],
@@ -62,19 +68,26 @@ const spokenTokenMap = [
 ];
 
 const spokenFunctionMap = [
-  [/square root of/g, "Math.sqrt"],
-  [/sine inverse of|arc sine of/g, 'safeTrig("asin",'],
-  [/cosine inverse of|arc cosine of/g, 'safeTrig("acos",'],
-  [/tangent inverse of|arc tangent of/g, 'safeTrig("atan",'],
-  [/sine of/g, 'safeTrig("sin",'],
-  [/cosine of/g, 'safeTrig("cos",'],
-  [/tangent of/g, 'safeTrig("tan",'],
-  [/natural log of/g, "Math.log"],
-  [/log of|logarithm of/g, "Math.log10"],
-  [/absolute value of/g, "Math.abs"],
+  [/square root of|root of/g, "Math.sqrt"],
+  [/cube root of/g, "cbrt"],
+  [/sine inverse of|inverse sine of|arc sine of|sin inverse of|sin^-1 of/g, 'safeTrig("asin",'],
+  [/cosine inverse of|inverse cosine of|arc cosine of|cos inverse of|cos^-1 of/g, 'safeTrig("acos",'],
+  [/tangent inverse of|inverse tangent of|arc tangent of|tan inverse of|tan^-1 of/g, 'safeTrig("atan",'],
+  [/cotangent inverse of|inverse cotangent of|arc cotangent of|cot inverse of|cot^-1 of/g, 'safeTrig("acot",'],
+  [/secant inverse of|inverse secant of|arc secant of|sec inverse of|sec^-1 of/g, 'safeTrig("asec",'],
+  [/cosecant inverse of|inverse cosecant of|arc cosecant of|cosec inverse of|cosec^-1 of|csc inverse of|csc^-1 of/g, 'safeTrig("acsc",'],
+  [/sine of|sign of|sin of/g, 'safeTrig("sin",'],
+  [/cosine of|cos of/g, 'safeTrig("cos",'],
+  [/tangent of|tan of/g, 'safeTrig("tan",'],
+  [/cotangent of|cot of/g, 'safeTrig("cot",'],
+  [/secant of|sec of/g, 'safeTrig("sec",'],
+  [/cosecant of|cosec of|csc of/g, 'safeTrig("csc",'],
+  [/natural log of|natural logarithm of|ln of/g, "Math.log"],
+  [/log base 10 of|common log of|common logarithm of|logarithm of|log of/g, "Math.log10"],
+  [/absolute value of|modulus of|mod of/g, "Math.abs"],
   [/factorial of/g, "factorial"],
   [/percent of/g, "percent"],
-  [/exponential of/g, "Math.exp"]
+  [/exponential of|e to the power of/g, "Math.exp"]
 ];
 
 const spokenNumbers = {
@@ -377,12 +390,24 @@ function safeTrig(name, value) {
       return Math.cos(toRadians(value));
     case "tan":
       return Math.tan(toRadians(value));
+    case "cot":
+      return 1 / Math.tan(toRadians(value));
+    case "sec":
+      return 1 / Math.cos(toRadians(value));
+    case "csc":
+      return 1 / Math.sin(toRadians(value));
     case "asin":
       return fromRadians(Math.asin(value));
     case "acos":
       return fromRadians(Math.acos(value));
     case "atan":
       return fromRadians(Math.atan(value));
+    case "acot":
+      return fromRadians(Math.atan(1 / value));
+    case "asec":
+      return fromRadians(Math.acos(1 / value));
+    case "acsc":
+      return fromRadians(Math.asin(1 / value));
     default:
       throw new Error("Unknown trig function.");
   }
@@ -399,9 +424,10 @@ function tryEvaluate(rawExpression) {
       "factorial",
       "percent",
       "safeTrig",
+      "cbrt",
       `"use strict"; return (${sanitized});`
     );
-    const value = evaluator(factorial, percent, safeTrig);
+    const value = evaluator(factorial, percent, safeTrig, Math.cbrt);
     if (typeof value !== "number" || Number.isNaN(value)) {
       throw new Error("Invalid result.");
     }
@@ -424,6 +450,7 @@ function parseSpokenMath(transcript) {
   parsed = parsed.replace(/\bthe result of\b|\bresult of\b|\bvalue of\b/g, " ");
   parsed = parsed.replace(/\bis\b/g, " ");
   parsed = parsed.replace(/\bdegrees\b|\bdegree\b/g, "");
+  parsed = parsed.replace(/\bradians\b|\bradian\b/g, "");
   parsed = parsed.replace(/\binto\b/g, "*");
   parsed = parsed.replace(/\s+/g, " ").trim();
   parsed = normalizeSpokenNumberPhrases(parsed);
@@ -469,12 +496,33 @@ function parseSpokenMath(transcript) {
   parsed = parsed.replace(/to the power of|power of/g, "**");
   parsed = parsed.replace(/squared/g, "**2");
   parsed = parsed.replace(/cubed/g, "**3");
+  parsed = parsed.replace(/raised to/g, "**");
+  parsed = parsed.replace(/\bsin\s+(?=\d|\()/g, 'safeTrig("sin", ');
+  parsed = parsed.replace(/\bcos\s+(?=\d|\()/g, 'safeTrig("cos", ');
+  parsed = parsed.replace(/\btan\s+(?=\d|\()/g, 'safeTrig("tan", ');
+  parsed = parsed.replace(/\bcot\s+(?=\d|\()/g, 'safeTrig("cot", ');
+  parsed = parsed.replace(/\bsec\s+(?=\d|\()/g, 'safeTrig("sec", ');
+  parsed = parsed.replace(/\b(cosec|csc)\s+(?=\d|\()/g, 'safeTrig("csc", ');
+  parsed = parsed.replace(/\basin\s+(?=\d|\()/g, 'safeTrig("asin", ');
+  parsed = parsed.replace(/\bacos\s+(?=\d|\()/g, 'safeTrig("acos", ');
+  parsed = parsed.replace(/\batan\s+(?=\d|\()/g, 'safeTrig("atan", ');
+  parsed = parsed.replace(/\bacot\s+(?=\d|\()/g, 'safeTrig("acot", ');
+  parsed = parsed.replace(/\basec\s+(?=\d|\()/g, 'safeTrig("asec", ');
+  parsed = parsed.replace(/\b(acosec|acsc)\s+(?=\d|\()/g, 'safeTrig("acsc", ');
+  parsed = parsed.replace(/\bln\s+(?=\d|\()/g, "Math.log ");
+  parsed = parsed.replace(/\blog\s+(?=\d|\()/g, "Math.log10 ");
+  parsed = parsed.replace(/\bsqrt\s+(?=\d|\()/g, "Math.sqrt ");
   parsed = parsed.replace(/multiplied with/g, "*");
+  parsed = parsed.replace(/multiplied/g, "*");
   parsed = parsed.replace(/added to/g, "+");
   parsed = parsed.replace(/subtracted from/g, "-");
+  parsed = parsed.replace(/minus sign/g, "-");
+  parsed = parsed.replace(/plus sign/g, "+");
   parsed = parsed.replace(/\bof\b/g, "*");
   parsed = parsed.replace(/\bby\b/g, " ");
   parsed = parsed.replace(/\s+percentage\b/g, " percent");
+  parsed = parsed.replace(/\btime\b/g, "*");
+  parsed = parsed.replace(/\btimes\b/g, "*");
   parsed = parsed.replace(/\s+/g, " ").trim();
 
   const tokens = parsed.split(" ").filter(Boolean);
@@ -489,7 +537,8 @@ function parseSpokenMath(transcript) {
       token === "Math.abs" ||
       token === "factorial" ||
       token === "percent" ||
-      token === "Math.exp"
+      token === "Math.exp" ||
+      token === "cbrt"
     ) {
       output.push(`${token}(`);
       stack.push(")");
