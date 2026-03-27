@@ -245,6 +245,9 @@ function appendVoiceExpression(transcriptExpression) {
   }
 
   setExpression(normalized);
+  if (!/[a-z]/i.test(normalized)) {
+    commitResult();
+  }
 }
 
 function factorial(value) {
@@ -319,6 +322,14 @@ function parseSpokenMath(transcript) {
     return "";
   }
 
+  parsed = parsed.replace(/[?,]/g, " ");
+  parsed = parsed.replace(/\bwhat is\b|\bwhat's\b|\bhow much is\b|\bhow much\b|\bplease\b|\bcan you\b|\bcould you\b|\bfind\b/g, " ");
+  parsed = parsed.replace(/\bis\b/g, " ");
+
+  parsed = parsed.replace(/(\d+(?:\.\d+)?)\s*%+\s*of\s*(\d+(?:\.\d+)?)/g, "(($1/100)*$2)");
+  parsed = parsed.replace(/(\d+(?:\.\d+)?)\s+percent\s+of\s+(\d+(?:\.\d+)?)/g, "(($1/100)*$2)");
+  parsed = parsed.replace(/(\d+(?:\.\d+)?)\s*%/g, "percent($1)");
+
   if (/(equals|equal to|calculate|compute)$/.test(parsed)) {
     parsed = parsed.replace(/(equals|equal to|calculate|compute)$/g, "").trim();
     if (!parsed) {
@@ -345,6 +356,9 @@ function parseSpokenMath(transcript) {
   parsed = parsed.replace(/to the power of|power of/g, "**");
   parsed = parsed.replace(/squared/g, "**2");
   parsed = parsed.replace(/cubed/g, "**3");
+  parsed = parsed.replace(/\bof\b/g, "*");
+  parsed = parsed.replace(/\bby\b/g, " ");
+  parsed = parsed.replace(/\s+percentage\b/g, " percent");
   parsed = parsed.replace(/\s+/g, " ").trim();
 
   const tokens = parsed.split(" ").filter(Boolean);
@@ -369,6 +383,10 @@ function parseSpokenMath(transcript) {
     if (token.startsWith('safeTrig("')) {
       output.push(`${token} `);
       stack.push(")");
+      return;
+    }
+
+    if (/^[a-z]+$/i.test(token) && token !== "ans") {
       return;
     }
 
