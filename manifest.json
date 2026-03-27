@@ -1,0 +1,17 @@
+{
+  "name": "Orbit Scientific Calculator",
+  "short_name": "Orbit Calc",
+  "description": "A responsive scientific calculator with history, memory tools, and offline support.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f3efe5",
+  "theme_color": "#f3efe5",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
