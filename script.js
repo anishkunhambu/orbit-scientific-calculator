@@ -61,39 +61,39 @@ const previewReplacements = [
 const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 const spokenTokenMap = [
-  [/multiplied by|multiply by|times/g, "*"],
-  [/divided by|divide by|over/g, "/"],
-  [/plus/g, "+"],
-  [/minus/g, "-"],
-  [/point|dot|decimal/g, "."],
-  [/open bracket|open parenthesis/g, "("],
-  [/close bracket|close parenthesis/g, ")"],
-  [/pi/g, "Math.PI"],
+  [/\bmultiplied by\b|\bmultiply by\b|\btimes\b/g, "*"],
+  [/\bdivided by\b|\bdivide by\b|\bover\b/g, "/"],
+  [/\bplus\b/g, "+"],
+  [/\bminus\b/g, "-"],
+  [/\bpoint\b|\bdot\b|\bdecimal\b/g, "."],
+  [/\bopen bracket\b|\bopen parenthesis\b/g, "("],
+  [/\bclose bracket\b|\bclose parenthesis\b/g, ")"],
+  [/\bpi\b/g, "Math.PI"],
   [/\bans\b|\banswer\b/g, "ans"],
   [/\be\b/g, "Math.E"]
 ];
 
 const spokenFunctionMap = [
-  [/square root of|root of/g, "Math.sqrt"],
-  [/cube root of/g, "cbrt"],
-  [/sine inverse of|inverse sine of|arc sine of|sin inverse of|sin^-1 of/g, 'safeTrig("asin",'],
-  [/cosine inverse of|inverse cosine of|arc cosine of|cos inverse of|cos^-1 of/g, 'safeTrig("acos",'],
-  [/tangent inverse of|inverse tangent of|arc tangent of|tan inverse of|tan^-1 of/g, 'safeTrig("atan",'],
-  [/cotangent inverse of|inverse cotangent of|arc cotangent of|cot inverse of|cot^-1 of/g, 'safeTrig("acot",'],
-  [/secant inverse of|inverse secant of|arc secant of|sec inverse of|sec^-1 of/g, 'safeTrig("asec",'],
-  [/cosecant inverse of|inverse cosecant of|arc cosecant of|cosec inverse of|cosec^-1 of|csc inverse of|csc^-1 of/g, 'safeTrig("acsc",'],
-  [/sine of|sin of/g, 'safeTrig("sin",'],
-  [/cosine of|cos of/g, 'safeTrig("cos",'],
-  [/tangent of|tan of/g, 'safeTrig("tan",'],
-  [/cotangent of|cot of/g, 'safeTrig("cot",'],
-  [/secant of|sec of/g, 'safeTrig("sec",'],
-  [/cosecant of|cosec of|csc of/g, 'safeTrig("csc",'],
-  [/natural log of|natural logarithm of|ln of/g, "Math.log"],
-  [/log base 10 of|common log of|common logarithm of|logarithm of|log of/g, "Math.log10"],
-  [/absolute value of|modulus of|mod of/g, "Math.abs"],
-  [/factorial of/g, "factorial"],
-  [/percent of/g, "percent"],
-  [/exponential of|e to the power of/g, "Math.exp"]
+  [/\bsquare root of\b|\broot of\b/g, "Math.sqrt"],
+  [/\bcube root of\b/g, "cbrt"],
+  [/\bsine inverse of\b|\binverse sine of\b|\barc sine of\b|\bsin inverse of\b|\bsin\^-1 of\b/g, 'safeTrig("asin",'],
+  [/\bcosine inverse of\b|\binverse cosine of\b|\barc cosine of\b|\bcos inverse of\b|\bcos\^-1 of\b/g, 'safeTrig("acos",'],
+  [/\btangent inverse of\b|\binverse tangent of\b|\barc tangent of\b|\btan inverse of\b|\btan\^-1 of\b/g, 'safeTrig("atan",'],
+  [/\bcotangent inverse of\b|\binverse cotangent of\b|\barc cotangent of\b|\bcot inverse of\b|\bcot\^-1 of\b/g, 'safeTrig("acot",'],
+  [/\bsecant inverse of\b|\binverse secant of\b|\barc secant of\b|\bsec inverse of\b|\bsec\^-1 of\b/g, 'safeTrig("asec",'],
+  [/\bcosecant inverse of\b|\binverse cosecant of\b|\barc cosecant of\b|\bcosec inverse of\b|\bcosec\^-1 of\b|\bcsc inverse of\b|\bcsc\^-1 of\b/g, 'safeTrig("acsc",'],
+  [/\bsine of\b|\bsin of\b/g, 'safeTrig("sin",'],
+  [/\bcosine of\b|\bcos of\b/g, 'safeTrig("cos",'],
+  [/\btangent of\b|\btan of\b/g, 'safeTrig("tan",'],
+  [/\bcotangent of\b|\bcot of\b/g, 'safeTrig("cot",'],
+  [/\bsecant of\b|\bsec of\b/g, 'safeTrig("sec",'],
+  [/\bcosecant of\b|\bcosec of\b|\bcsc of\b/g, 'safeTrig("csc",'],
+  [/\bnatural log of\b|\bnatural logarithm of\b|\bln of\b/g, "Math.log"],
+  [/\blog base 10 of\b|\bcommon log of\b|\bcommon logarithm of\b|\blogarithm of\b|\blog of\b/g, "Math.log10"],
+  [/\babsolute value of\b|\bmodulus of\b|\bmod of\b/g, "Math.abs"],
+  [/\bfactorial of\b/g, "factorial"],
+  [/\bpercent of\b/g, "percent"],
+  [/\bexponential of\b|\be to the power of\b/g, "Math.exp"]
 ];
 
 const spokenNumbers = {
@@ -434,7 +434,9 @@ function normalizeSpeechAliases(input) {
     .replace(/\bco sec\b|\bco-secant\b|\bco secant\b/g, "cosecant")
     .replace(/\barc tan\b/g, "arc tangent")
     .replace(/\barc cos\b/g, "arc cosine")
-    .replace(/\barc sin\b/g, "arc sine");
+    .replace(/\barc sin\b/g, "arc sine")
+    .replace(/\bpie\b/g, "pi")
+    .replace(/\bellen\b/g, "ln");
 }
 
 function compactParsedExpression(input) {
@@ -587,10 +589,10 @@ function parseSpokenMath(transcript) {
     parsed = parsed.replace(pattern, ` ${replacement} `);
   });
 
-  parsed = parsed.replace(/to the power of|power of/g, "**");
-  parsed = parsed.replace(/squared/g, "**2");
-  parsed = parsed.replace(/cubed/g, "**3");
-  parsed = parsed.replace(/raised to/g, "**");
+  parsed = parsed.replace(/\bto the power of\b|\bpower of\b/g, "**");
+  parsed = parsed.replace(/\bsquared\b/g, "**2");
+  parsed = parsed.replace(/\bcubed\b/g, "**3");
+  parsed = parsed.replace(/\braised to\b/g, "**");
   parsed = parsed.replace(/\bsine\s+(?=\d|\()/g, 'safeTrig("sin", ');
   parsed = parsed.replace(/\bsin\s+(?=\d|\()/g, 'safeTrig("sin", ');
   parsed = parsed.replace(/\bcosine\s+(?=\d|\()/g, 'safeTrig("cos", ');
@@ -621,12 +623,12 @@ function parseSpokenMath(transcript) {
   parsed = parsed.replace(/\bsquare root\s+(?=\d|\()/g, "Math.sqrt ");
   parsed = parsed.replace(/\bsqrt\s+(?=\d|\()/g, "Math.sqrt ");
   parsed = parsed.replace(/\bcube root\s+(?=\d|\()/g, "cbrt ");
-  parsed = parsed.replace(/multiplied with/g, "*");
-  parsed = parsed.replace(/multiplied/g, "*");
-  parsed = parsed.replace(/added to/g, "+");
-  parsed = parsed.replace(/subtracted from/g, "-");
-  parsed = parsed.replace(/minus sign/g, "-");
-  parsed = parsed.replace(/plus sign/g, "+");
+  parsed = parsed.replace(/\bmultiplied with\b/g, "*");
+  parsed = parsed.replace(/\bmultiplied\b/g, "*");
+  parsed = parsed.replace(/\badded to\b/g, "+");
+  parsed = parsed.replace(/\bsubtracted from\b/g, "-");
+  parsed = parsed.replace(/\bminus sign\b/g, "-");
+  parsed = parsed.replace(/\bplus sign\b/g, "+");
   parsed = parsed.replace(/\bof\b/g, "*");
   parsed = parsed.replace(/\bby\b/g, " ");
   parsed = parsed.replace(/\s+percentage\b/g, " percent");
