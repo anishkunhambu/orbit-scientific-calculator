@@ -90,6 +90,39 @@ const spokenNumbers = {
   ten: "10"
 };
 
+const spokenNumberWords = {
+  zero: 0,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
+  twenty: 20,
+  thirty: 30,
+  forty: 40,
+  fifty: 50,
+  sixty: 60,
+  seventy: 70,
+  eighty: 80,
+  ninety: 90,
+  hundred: 100,
+  thousand: 1000
+};
+
 function updateDisplay(previewValue = null) {
   expressionInput.value = formatPreview(expression);
   resultOutput.textContent = previewValue ?? formatNumber(lastAnswer);
@@ -250,6 +283,53 @@ function appendVoiceExpression(transcriptExpression) {
   }
 }
 
+function normalizeSpokenNumberPhrases(input) {
+  const tokens = input.split(/\s+/).filter(Boolean);
+  const normalized = [];
+  let current = 0;
+  let total = 0;
+  let inNumberPhrase = false;
+
+  const flush = () => {
+    if (inNumberPhrase) {
+      normalized.push(String(total + current));
+      current = 0;
+      total = 0;
+      inNumberPhrase = false;
+    }
+  };
+
+  tokens.forEach(token => {
+    if (token === "and" && inNumberPhrase) {
+      return;
+    }
+
+    if (!(token in spokenNumberWords)) {
+      flush();
+      normalized.push(token);
+      return;
+    }
+
+    inNumberPhrase = true;
+    const value = spokenNumberWords[token];
+    if (value === 100) {
+      current = (current || 1) * value;
+      return;
+    }
+
+    if (value === 1000) {
+      total += (current || 1) * value;
+      current = 0;
+      return;
+    }
+
+    current += value;
+  });
+
+  flush();
+  return normalized.join(" ");
+}
+
 function factorial(value) {
   if (!Number.isInteger(value) || value < 0) {
     throw new Error("Factorial is defined for non-negative integers only.");
@@ -323,12 +403,29 @@ function parseSpokenMath(transcript) {
   }
 
   parsed = parsed.replace(/[?,]/g, " ");
-  parsed = parsed.replace(/\bwhat is\b|\bwhat's\b|\bhow much is\b|\bhow much\b|\bplease\b|\bcan you\b|\bcould you\b|\bfind\b/g, " ");
+  parsed = parsed.replace(/％/g, "%");
+  parsed = parsed.replace(/\bwhat is\b|\bwhat's\b|\bhow much is\b|\bhow much\b|\bplease\b|\bcan you\b|\bcould you\b|\bfind\b|\btell me\b|\bsolve\b|\bgive me\b/g, " ");
+  parsed = parsed.replace(/\bthe result of\b|\bresult of\b|\bvalue of\b/g, " ");
   parsed = parsed.replace(/\bis\b/g, " ");
+  parsed = parsed.replace(/\bdegrees\b|\bdegree\b/g, "");
+  parsed = parsed.replace(/\binto\b/g, "*");
+  parsed = parsed.replace(/\s+/g, " ").trim();
+  parsed = normalizeSpokenNumberPhrases(parsed);
+
+  const directPercentOf = parsed.match(/^(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)$/);
+  if (directPercentOf) {
+    return `((${directPercentOf[1]}/100)*${directPercentOf[2]})`;
+  }
+
+  const directWordPercentOf = parsed.match(/^(\d+(?:\.\d+)?)\s+percent\s+of\s+(\d+(?:\.\d+)?)$/);
+  if (directWordPercentOf) {
+    return `((${directWordPercentOf[1]}/100)*${directWordPercentOf[2]})`;
+  }
 
   parsed = parsed.replace(/(\d+(?:\.\d+)?)\s*%+\s*of\s*(\d+(?:\.\d+)?)/g, "(($1/100)*$2)");
   parsed = parsed.replace(/(\d+(?:\.\d+)?)\s+percent\s+of\s+(\d+(?:\.\d+)?)/g, "(($1/100)*$2)");
-  parsed = parsed.replace(/(\d+(?:\.\d+)?)\s*%/g, "percent($1)");
+  parsed = parsed.replace(/(\d+(?:\.\d+)?)\s*%/g, "($1/100)");
+  parsed = parsed.replace(/(\d+(?:\.\d+)?)\s+percent\b/g, "($1/100)");
 
   if (/(equals|equal to|calculate|compute)$/.test(parsed)) {
     parsed = parsed.replace(/(equals|equal to|calculate|compute)$/g, "").trim();
@@ -356,6 +453,9 @@ function parseSpokenMath(transcript) {
   parsed = parsed.replace(/to the power of|power of/g, "**");
   parsed = parsed.replace(/squared/g, "**2");
   parsed = parsed.replace(/cubed/g, "**3");
+  parsed = parsed.replace(/multiplied with/g, "*");
+  parsed = parsed.replace(/added to/g, "+");
+  parsed = parsed.replace(/subtracted from/g, "-");
   parsed = parsed.replace(/\bof\b/g, "*");
   parsed = parsed.replace(/\bby\b/g, " ");
   parsed = parsed.replace(/\s+percentage\b/g, " percent");
