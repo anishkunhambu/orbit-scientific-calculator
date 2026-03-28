@@ -76,12 +76,7 @@
             <span id="voice-heard">Heard: -</span>
             <span id="voice-parsed">Parsed: -</span>
           </div>
-          <div class="history" id="history" aria-live="polite">Ready</div>
-          <div class="edit-row" aria-label="Expression editing controls">
-            <button class="ghost-button edit-button" id="edit-toggle" type="button" aria-pressed="false">Edit</button>
-            <button class="ghost-button edit-button" id="display-delete" type="button">Delete</button>
-            <button class="ghost-button edit-button" id="display-clear" type="button">Clear</button>
-          </div>
+          <div class="history" id="history" aria-live="polite"></div>
           <label class="sr-only" for="expression">Expression</label>
           <input
             id="expression"
@@ -97,9 +92,15 @@
           <div class="primary-result" id="primary-result" aria-live="polite">0</div>
           <div class="result-row">
             <span>Result</span>
-            <output id="result" aria-live="polite">0</output>
+            <output id="result" aria-live="polite"></output>
           </div>
         </section>
+
+        <div class="edit-row" aria-label="Expression editing controls">
+          <button class="ghost-button edit-button" id="edit-toggle" type="button" aria-pressed="false">Edit</button>
+          <button class="ghost-button edit-button" id="display-delete" type="button">Delete</button>
+          <button class="ghost-button edit-button" id="display-clear" type="button">Clear</button>
+        </div>
 
         <section class="quick-actions" aria-label="Memory controls">
           <button type="button" data-action="mc">MC</button>

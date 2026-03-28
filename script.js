@@ -178,10 +178,15 @@ const bareVoiceFunctions = {
 };
 
 function updateDisplay(previewValue = null) {
-  expressionInput.value = isEditMode ? expression : formatPreview(expression);
+  const formattedExpression = formatPreview(expression);
+  expressionInput.value = isEditMode
+    ? expression
+    : formattedExpression === "0"
+      ? ""
+      : formattedExpression;
   const visibleResult = previewValue ?? formatNumber(lastAnswer);
   primaryResult.textContent = visibleResult;
-  resultOutput.textContent = visibleResult;
+  resultOutput.textContent = "";
   memoryIndicator.textContent = `Memory: ${formatNumber(memoryValue)}`;
   modeIndicator.textContent = isDegreeMode ? "Degrees" : "Radians";
   angleToggle.textContent = isDegreeMode ? "DEG" : "RAD";
@@ -813,7 +818,7 @@ function deleteFromExpressionInput() {
 
 function clearExpression() {
   expression = "0";
-  historyOutput.textContent = "Ready";
+  historyOutput.textContent = "";
   updateDisplay("0");
 }
 
