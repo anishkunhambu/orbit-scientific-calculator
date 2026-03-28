@@ -1,3 +1,5 @@
+var window = this;  
+var globalThis = this;  
 (function (global) {
   const spokenNumbers = {
     zero: "0",
@@ -413,15 +415,9 @@
   function tryEvaluateDirectFunction(sanitized, options = {}) {
     const { lastAnswer = 0, isDegreeMode = false } = options;
 
-    const normalizedDirect = sanitized
-      .replace(/\s+\)/g, ")")
-      .replace(/\)\)+$/g, ")")
-      .trim();
-
-    const trigMatch = normalizedDirect.match(/^safeTrig\("([a-z]+)",\s*(.+?)\)\s*$/);
+    const trigMatch = sanitized.match(/^safeTrig\("([a-z]+)",\s*(.+)\)$/);
     if (trigMatch) {
-      const argExpression = trigMatch[2].trim().replace(/\)+$/g, "").trim();
-      const argResult = tryEvaluate(argExpression, { lastAnswer, isDegreeMode });
+      const argResult = tryEvaluate(trigMatch[2], { lastAnswer, isDegreeMode });
       if (!argResult.ok) {
         return argResult;
       }
@@ -432,13 +428,12 @@
       }
     }
 
-    const directMatch = normalizedDirect.match(/^(Math\.(sqrt|log10|log|abs|exp)|cbrt|factorial|percent)\((.+?)\)\s*$/);
+    const directMatch = sanitized.match(/^(Math\.(sqrt|log10|log|abs|exp)|cbrt|factorial|percent)\((.+)\)$/);
     if (!directMatch) {
       return null;
     }
 
-    const argExpression = directMatch[3].trim().replace(/\)+$/g, "").trim();
-    const argResult = tryEvaluate(argExpression, { lastAnswer, isDegreeMode });
+    const argResult = tryEvaluate(directMatch[3], { lastAnswer, isDegreeMode });
     if (!argResult.ok) {
       return argResult;
     }
@@ -717,3 +712,9 @@
     module.exports = api;
   }
 }(typeof globalThis !== "undefined" ? globalThis : window));
+var expr = VoiceMath.parseSpokenMath('sin 60');  
+WScript.Echo('PARSED=' + expr);  
+var result = VoiceMath.tryEvaluate(expr, { lastAnswer: 0, isDegreeMode: true });  
+WScript.Echo('OK=' + result.ok);  
+if (result.message) WScript.Echo('MSG=' + result.message);  
+if (typeof result.value !== 'undefined') WScript.Echo('VAL=' + result.value);  
