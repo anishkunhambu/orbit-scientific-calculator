@@ -471,12 +471,31 @@ function compactParsedExpression(input) {
   compact = compact.replace(/\s*,\s*/g, ", ");
   compact = compact.replace(/(\d)\s*\.\s*(\d)/g, "$1.$2");
   compact = compact.replace(/(^|[^\d])\.\s*(\d)/g, "$10.$2");
+  compact = compact.replace(/(\d)\.(?=\D|$)/g, "$1");
   compact = compact.replace(/\+\s+(\d)/g, "+$1");
   compact = compact.replace(/-\s+(\d)/g, "-$1");
   compact = compact.replace(/\*\s+(\d)/g, "*$1");
   compact = compact.replace(/\/\s+(\d)/g, "/$1");
+  compact = compact.replace(/\)\s*\./g, ")");
+  compact = compact.replace(/\s+/g, " ").trim();
+  compact = compact.replace(/[;:!?]+$/g, "");
   compact = compact.replace(/\s+/g, " ").trim();
   return compact;
+}
+
+function normalizeMathArtifacts(input) {
+  let normalized = compactParsedExpression(input);
+  normalized = normalized.replace(/(\d)\.(?=[\)\+\-\*\/]|$)/g, "$1");
+  normalized = normalized.replace(/Math\.log10\(([^()]+)\.\)/g, "Math.log10($1)");
+  normalized = normalized.replace(/Math\.log\(([^()]+)\.\)/g, "Math.log($1)");
+  normalized = normalized.replace(/Math\.sqrt\(([^()]+)\.\)/g, "Math.sqrt($1)");
+  normalized = normalized.replace(/Math\.abs\(([^()]+)\.\)/g, "Math.abs($1)");
+  normalized = normalized.replace(/Math\.exp\(([^()]+)\.\)/g, "Math.exp($1)");
+  normalized = normalized.replace(/safeTrig\("([a-z]+)",\s*([^()]+)\.\)/g, 'safeTrig("$1", $2)');
+  normalized = normalized.replace(/factorial\(([^()]+)\.\)/g, "factorial($1)");
+  normalized = normalized.replace(/percent\(([^()]+)\.\)/g, "percent($1)");
+  normalized = normalized.replace(/cbrt\(([^()]+)\.\)/g, "cbrt($1)");
+  return normalized;
 }
 
 function factorial(value) {
@@ -535,7 +554,7 @@ function safeTrig(name, value) {
 
 function tryEvaluate(rawExpression) {
   try {
-    const sanitized = rawExpression
+    const sanitized = normalizeMathArtifacts(rawExpression)
       .replace(/ans/g, `(${lastAnswer})`)
       .replace(/Math\.PI/g, `(${Math.PI})`)
       .replace(/Math\.E/g, `(${Math.E})`);
@@ -706,7 +725,7 @@ function parseSpokenMath(transcript) {
     return "";
   }
 
-  return compactParsedExpression(`${output.join(" ")}${stack.reverse().join("")}`.trim());
+  return normalizeMathArtifacts(`${output.join(" ")}${stack.reverse().join("")}`.trim());
 }
 
 function initializeVoiceRecognition() {
