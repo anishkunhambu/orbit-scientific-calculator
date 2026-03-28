@@ -178,6 +178,112 @@ const bareVoiceFunctions = {
   exp: "Math.exp("
 };
 
+const canonicalVoiceFunctions = {
+  "__FN_SIN__": 'safeTrig("sin",',
+  "__FN_COS__": 'safeTrig("cos",',
+  "__FN_TAN__": 'safeTrig("tan",',
+  "__FN_COT__": 'safeTrig("cot",',
+  "__FN_SEC__": 'safeTrig("sec",',
+  "__FN_CSC__": 'safeTrig("csc",',
+  "__FN_ASIN__": 'safeTrig("asin",',
+  "__FN_ACOS__": 'safeTrig("acos",',
+  "__FN_ATAN__": 'safeTrig("atan",',
+  "__FN_ACOT__": 'safeTrig("acot",',
+  "__FN_ASEC__": 'safeTrig("asec",',
+  "__FN_ACSC__": 'safeTrig("acsc",',
+  "__FN_LOG__": "Math.log10(",
+  "__FN_LN__": "Math.log(",
+  "__FN_SQRT__": "Math.sqrt(",
+  "__FN_CBRT__": "cbrt(",
+  "__FN_ABS__": "Math.abs(",
+  "__FN_EXP__": "Math.exp(",
+  "__FN_FACTORIAL__": "factorial(",
+  "__FN_PERCENT__": "percent("
+};
+
+const canonicalVoicePhrases = [
+  ["raised to the power of", "**"],
+  ["raised to the power", "**"],
+  ["to the power of", "**"],
+  ["to the power", "**"],
+  ["power of", "**"],
+  ["multiplied by", "*"],
+  ["multiply by", "*"],
+  ["multiplied with", "*"],
+  ["divided by", "/"],
+  ["divide by", "/"],
+  ["open bracket", "("],
+  ["open parenthesis", "("],
+  ["close bracket", ")"],
+  ["close parenthesis", ")"],
+  ["plus sign", "+"],
+  ["minus sign", "-"],
+  ["added to", "+"],
+  ["subtracted from", "-"],
+  ["natural logarithm of", "__FN_LN__"],
+  ["natural log of", "__FN_LN__"],
+  ["common logarithm of", "__FN_LOG__"],
+  ["common log of", "__FN_LOG__"],
+  ["logarithm of", "__FN_LOG__"],
+  ["log base 10 of", "__FN_LOG__"],
+  ["square root of", "__FN_SQRT__"],
+  ["cube root of", "__FN_CBRT__"],
+  ["absolute value of", "__FN_ABS__"],
+  ["modulus of", "__FN_ABS__"],
+  ["mod of", "__FN_ABS__"],
+  ["exponential of", "__FN_EXP__"],
+  ["e to the power of", "__FN_EXP__"],
+  ["sine inverse of", "__FN_ASIN__"],
+  ["inverse sine of", "__FN_ASIN__"],
+  ["arc sine of", "__FN_ASIN__"],
+  ["sin inverse of", "__FN_ASIN__"],
+  ["sin^-1 of", "__FN_ASIN__"],
+  ["cosine inverse of", "__FN_ACOS__"],
+  ["inverse cosine of", "__FN_ACOS__"],
+  ["arc cosine of", "__FN_ACOS__"],
+  ["cos inverse of", "__FN_ACOS__"],
+  ["cos^-1 of", "__FN_ACOS__"],
+  ["tangent inverse of", "__FN_ATAN__"],
+  ["inverse tangent of", "__FN_ATAN__"],
+  ["arc tangent of", "__FN_ATAN__"],
+  ["tan inverse of", "__FN_ATAN__"],
+  ["tan^-1 of", "__FN_ATAN__"],
+  ["cotangent inverse of", "__FN_ACOT__"],
+  ["inverse cotangent of", "__FN_ACOT__"],
+  ["arc cotangent of", "__FN_ACOT__"],
+  ["cot inverse of", "__FN_ACOT__"],
+  ["cot^-1 of", "__FN_ACOT__"],
+  ["secant inverse of", "__FN_ASEC__"],
+  ["inverse secant of", "__FN_ASEC__"],
+  ["arc secant of", "__FN_ASEC__"],
+  ["sec inverse of", "__FN_ASEC__"],
+  ["sec^-1 of", "__FN_ASEC__"],
+  ["cosecant inverse of", "__FN_ACSC__"],
+  ["inverse cosecant of", "__FN_ACSC__"],
+  ["arc cosecant of", "__FN_ACSC__"],
+  ["cosec inverse of", "__FN_ACSC__"],
+  ["cosec^-1 of", "__FN_ACSC__"],
+  ["csc inverse of", "__FN_ACSC__"],
+  ["csc^-1 of", "__FN_ACSC__"],
+  ["sine of", "__FN_SIN__"],
+  ["cosine of", "__FN_COS__"],
+  ["tangent of", "__FN_TAN__"],
+  ["cotangent of", "__FN_COT__"],
+  ["secant of", "__FN_SEC__"],
+  ["cosecant of", "__FN_CSC__"],
+  ["cosec of", "__FN_CSC__"],
+  ["csc of", "__FN_CSC__"],
+  ["factorial of", "__FN_FACTORIAL__"],
+  ["percent of", "__FN_PERCENT__"],
+  ["times", "*"],
+  ["over", "/"],
+  ["plus", "+"],
+  ["minus", "-"],
+  ["point", "."],
+  ["dot", "."],
+  ["decimal", "."]
+];
+
 function updateDisplay(previewValue = null) {
   const formattedExpression = formatPreview(expression);
   expressionInput.value = isEditMode
@@ -481,6 +587,24 @@ function normalizeSpeechAliases(input) {
     .replace(/\bellen\b/g, "ln");
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function applyCanonicalVoicePhrases(input) {
+  let normalized = input;
+
+  canonicalVoicePhrases
+    .slice()
+    .sort((left, right) => right[0].length - left[0].length)
+    .forEach(([phrase, replacement]) => {
+      const pattern = new RegExp(`\\b${escapeRegExp(phrase)}\\b`, "g");
+      normalized = normalized.replace(pattern, replacement);
+    });
+
+  return normalized;
+}
+
 function compactParsedExpression(input) {
   let compact = input;
   compact = compact.replace(/\(\s+/g, "(");
@@ -641,60 +765,11 @@ function parseSpokenMath(transcript) {
   Object.entries(spokenNumbers).forEach(([word, digit]) => {
     parsed = parsed.replace(new RegExp(`\\b${word}\\b`, "g"), digit);
   });
-
-  spokenFunctionMap.forEach(([pattern, replacement]) => {
-    parsed = parsed.replace(pattern, `${replacement} `);
-  });
-
-  spokenTokenMap.forEach(([pattern, replacement]) => {
-    parsed = parsed.replace(pattern, ` ${replacement} `);
-  });
-
-  parsed = parsed.replace(/\bto the power of\b|\bto the power\b|\bpower of\b|\braised to the power of\b|\braised to the power\b/g, "**");
+  parsed = applyCanonicalVoicePhrases(parsed);
   parsed = parsed.replace(/\bsquared\b/g, "**2");
   parsed = parsed.replace(/\bcubed\b/g, "**3");
   parsed = parsed.replace(/\braised to\b/g, "**");
-  parsed = parsed.replace(/\bsine\s+(?=\d|\()/g, 'safeTrig("sin", ');
-  parsed = parsed.replace(/\bsin\s+(?=\d|\()/g, 'safeTrig("sin", ');
-  parsed = parsed.replace(/\bcosine\s+(?=\d|\()/g, 'safeTrig("cos", ');
-  parsed = parsed.replace(/\bcos\s+(?=\d|\()/g, 'safeTrig("cos", ');
-  parsed = parsed.replace(/\btangent\s+(?=\d|\()/g, 'safeTrig("tan", ');
-  parsed = parsed.replace(/\btan\s+(?=\d|\()/g, 'safeTrig("tan", ');
-  parsed = parsed.replace(/\bcotangent\s+(?=\d|\()/g, 'safeTrig("cot", ');
-  parsed = parsed.replace(/\bcot\s+(?=\d|\()/g, 'safeTrig("cot", ');
-  parsed = parsed.replace(/\bsecant\s+(?=\d|\()/g, 'safeTrig("sec", ');
-  parsed = parsed.replace(/\bsec\s+(?=\d|\()/g, 'safeTrig("sec", ');
-  parsed = parsed.replace(/\bcosecant\s+(?=\d|\()/g, 'safeTrig("csc", ');
-  parsed = parsed.replace(/\b(cosec|csc)\s+(?=\d|\()/g, 'safeTrig("csc", ');
-  parsed = parsed.replace(/\barc sine\s+(?=\d|\()/g, 'safeTrig("asin", ');
-  parsed = parsed.replace(/\basin\s+(?=\d|\()/g, 'safeTrig("asin", ');
-  parsed = parsed.replace(/\barc cosine\s+(?=\d|\()/g, 'safeTrig("acos", ');
-  parsed = parsed.replace(/\bacos\s+(?=\d|\()/g, 'safeTrig("acos", ');
-  parsed = parsed.replace(/\barc tangent\s+(?=\d|\()/g, 'safeTrig("atan", ');
-  parsed = parsed.replace(/\batan\s+(?=\d|\()/g, 'safeTrig("atan", ');
-  parsed = parsed.replace(/\barc cotangent\s+(?=\d|\()/g, 'safeTrig("acot", ');
-  parsed = parsed.replace(/\bacot\s+(?=\d|\()/g, 'safeTrig("acot", ');
-  parsed = parsed.replace(/\barc secant\s+(?=\d|\()/g, 'safeTrig("asec", ');
-  parsed = parsed.replace(/\basec\s+(?=\d|\()/g, 'safeTrig("asec", ');
-  parsed = parsed.replace(/\barc cosecant\s+(?=\d|\()/g, 'safeTrig("acsc", ');
-  parsed = parsed.replace(/\b(acosec|acsc)\s+(?=\d|\()/g, 'safeTrig("acsc", ');
-  parsed = parsed.replace(/\bln\s+(?=\d|\()/g, "Math.log ");
-  parsed = parsed.replace(/\blog\s+(?=\d|\()/g, "Math.log10 ");
-  parsed = parsed.replace(/\bnatural log\s+(?=\d|\()/g, "Math.log ");
-  parsed = parsed.replace(/\bsquare root\s+(?=\d|\()/g, "Math.sqrt ");
-  parsed = parsed.replace(/\bsqrt\s+(?=\d|\()/g, "Math.sqrt ");
-  parsed = parsed.replace(/\bcube root\s+(?=\d|\()/g, "cbrt ");
-  parsed = parsed.replace(/\bmultiplied with\b/g, "*");
-  parsed = parsed.replace(/\bmultiplied\b/g, "*");
-  parsed = parsed.replace(/\badded to\b/g, "+");
-  parsed = parsed.replace(/\bsubtracted from\b/g, "-");
-  parsed = parsed.replace(/\bminus sign\b/g, "-");
-  parsed = parsed.replace(/\bplus sign\b/g, "+");
-  parsed = parsed.replace(/\bof\b/g, "*");
-  parsed = parsed.replace(/\bby\b/g, " ");
   parsed = parsed.replace(/\s+percentage\b/g, " percent");
-  parsed = parsed.replace(/\btime\b/g, "*");
-  parsed = parsed.replace(/\btimes\b/g, "*");
   parsed = compactParsedExpression(parsed);
 
   const tokens = parsed.split(" ").filter(Boolean);
@@ -702,31 +777,36 @@ function parseSpokenMath(transcript) {
   const stack = [];
   const unknownWords = [];
 
+  const bareFunctionTokens = { ...bareVoiceFunctions };
+
+  const operatorTokens = {
+    "__OP_ADD__": "+",
+    "__OP_SUB__": "-",
+    "__OP_MUL__": "*",
+    "__OP_DIV__": "/",
+    "__OP_POW__": "**"
+  };
+
   tokens.forEach(token => {
-    if (bareVoiceFunctions[token]) {
-      output.push(bareVoiceFunctions[token]);
+    if (canonicalVoiceFunctions[token]) {
+      output.push(canonicalVoiceFunctions[token]);
       stack.push(")");
       return;
     }
 
-    if (
-      token === "Math.sqrt" ||
-      token === "Math.log" ||
-      token === "Math.log10" ||
-      token === "Math.abs" ||
-      token === "factorial" ||
-      token === "percent" ||
-      token === "Math.exp" ||
-      token === "cbrt"
-    ) {
-      output.push(`${token}(`);
+    if (operatorTokens[token]) {
+      output.push(operatorTokens[token]);
+      return;
+    }
+
+    if (bareFunctionTokens[token]) {
+      output.push(bareFunctionTokens[token]);
       stack.push(")");
       return;
     }
 
-    if (token.startsWith('safeTrig("')) {
-      output.push(`${token} `);
-      stack.push(")");
+    if (["(", ")", "+", "-", "*", "/", "**"].includes(token)) {
+      output.push(token);
       return;
     }
 
