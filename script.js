@@ -339,7 +339,26 @@ function wrapCurrentExpression(wrapper) {
 
 function updateLivePreview() {
   const previewResult = tryEvaluate(expression);
-  updateDisplay(previewResult.ok ? formatNumber(previewResult.value) : "...");
+  const normalized = (expression || "").trim();
+  const isEmpty = normalized === "" || normalized === "0";
+  const isIncomplete = /[\+\-\*\/\(]$/.test(normalized) || /\*\*$/.test(normalized);
+
+  if (previewResult.ok) {
+    updateDisplay(formatNumber(previewResult.value));
+    return;
+  }
+
+  if (isEmpty) {
+    updateDisplay(formatNumber(lastAnswer || 0));
+    return;
+  }
+
+  if (isIncomplete) {
+    updateDisplay("");
+    return;
+  }
+
+  updateDisplay("Error");
 }
 
 function setExpression(nextExpression) {
@@ -378,8 +397,9 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
   historyOutput.textContent = originalTranscript
     ? `Voice heard: ${originalTranscript}`
     : "Voice input captured";
-  primaryResult.textContent = "...";
-  resultOutput.textContent = "...";
+  primaryResult.textContent = "Error";
+  resultOutput.textContent = "";
+  setVoiceStatus(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`);
 }
 
 function normalizeSpokenNumberPhrases(input) {
