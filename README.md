@@ -1,168 +1,53 @@
 # Orbit Scientific Calculator
 
-A responsive scientific calculator built as a static web app with:
+A fresh rebuild of the calculator with:
 
-- desktop and mobile friendly UI
-- scientific functions and constants
-- calculation history and memory controls
-- voice input powered by a shared parser/evaluator module
-- installable PWA support
-- a browser-based voice parser regression test page
+- a new responsive UI for desktop and mobile
+- one shared expression language for typed input and voice input
+- a simpler math engine in `voice-math.js`
+- memory controls and history
+- built-in verification pages for engine tests, voice parser tests, and manual feature checks
 
-## Project Files
+## Core Files
 
-- `index.html`: app structure
-- `styles.css`: responsive layout and visual design
-- `script.js`: calculator logic, voice parsing, editing, and UI behavior
-- `voice-math.js`: shared spoken-math parser and evaluator
-- `calculator-test-cases.js`: reusable calculator engine test matrix
-- `calculator-tests.html`: in-browser regression harness for the math engine
-- `voice-parser-cases.js`: reusable voice test matrix
-- `voice-parser-tests.html`: in-browser regression harness for voice parsing
-- `feature-checklist.html`: manual verification checklist for UI and feature behavior
-- `sw.js`: service worker for offline support and update handling
-- `manifest.json`: PWA manifest
-- `icons/icon.svg`: app icon
+- `index.html`: main calculator UI
+- `styles.css`: responsive visual design
+- `script.js`: app state, keypad logic, edit mode, history, memory, and voice interaction
+- `voice-math.js`: shared expression evaluator and spoken-math parser
 
-## Run Locally
+## Verification Files
 
-Open `index.html` in a browser, or serve the folder from any static host.
+- `calculator-test-cases.js`: engine regression cases
+- `calculator-tests.html`: in-browser engine test page
+- `voice-parser-cases.js`: spoken phrase regression cases
+- `voice-parser-tests.html`: in-browser voice parser test page
+- `feature-checklist.html`: manual desktop/mobile verification checklist
 
-For the best PWA and service-worker behavior, use a hosted URL instead of opening the file directly.
+## How To Run
 
-## Deploy
+Open `index.html` in a browser, or deploy the folder to Vercel/Netlify as a static site.
 
-### GitHub + Vercel
+## How To Test
 
-1. Commit and push:
+Use this order:
+
+1. Open `calculator-tests.html`
+2. Open `voice-parser-tests.html`
+3. Use `feature-checklist.html`
+4. Then test the live app with real voice input on desktop and mobile
+
+## Deployment
+
+Push changes and let Vercel redeploy:
 
 ```bash
 git add .
-git commit -m "Update Orbit calculator"
+git commit -m "Rebuild scientific calculator"
 git push
 ```
 
-2. If the repo is already connected to Vercel, deployment starts automatically.
-3. Open the Vercel deployment and wait for `Ready`.
+## Notes
 
-### Netlify
-
-1. Go to `https://app.netlify.com/drop`
-2. Drag the project folder into the page
-3. Use the generated URL
-
-## Voice Input
-
-Voice input works best in Chromium-based browsers that support the Web Speech API.
-
-The parser and evaluator are centralized in `voice-math.js`, so typed and spoken scientific expressions do not rely on scattered one-off replacements anymore.
-
-The small voice debug area stays hidden until there is actual transcript or parsed content to show.
-
-## Voice Regression Harness
-
-Open `voice-parser-tests.html` in a browser to run the shared parser against a fixed matrix of phrases.
-
-It covers:
-
-- arithmetic
-- percentages
-- powers
-- roots
-- logs
-- trig and inverse trig
-- spoken-number phrases
-- punctuation cleanup
-- expected parse failures
-
-Use this page after parser changes before you redeploy the main app.
-
-## Full Testing Setup
-
-Use these three pages together:
-
-- `calculator-tests.html`: verifies calculator/evaluator logic
-- `voice-parser-tests.html`: verifies spoken-math parsing
-- `feature-checklist.html`: walks through desktop, mobile, voice, editing, history, memory, and PWA checks
-
-Recommended order:
-
-1. Run `calculator-tests.html`
-2. Run `voice-parser-tests.html`
-3. Use `feature-checklist.html` for live browser/device verification
-
-## PWA / Cache Notes
-
-- The app uses a service worker for offline support
-- `voice-math.js` and the voice test assets are also cached by the service worker
-- After a redeploy, a refresh may be needed once to load the newest version
-- If the UI says an update is available, refresh the page
-- If an installed mobile app still looks stale, close and reopen it after refresh
-
-## Quick Test Checklist
-
-### Core Math
-
-- `2 + 3 = 5`
-- `9 / 3 = 3`
-- `sqrt(81) = 9`
-- `log(100) = 2`
-- `ln(e) = 1`
-- `5! = 120`
-- `17% of 330 = 56.1`
-
-### Trig
-
-- in `DEG` mode: `sin 30 = 0.5`
-- in `DEG` mode: `cos 60 = 0.5`
-- in `DEG` mode: `tan 45 = 1`
-- `asin 0.5 = 30` in `DEG`
-
-### Voice
-
-Test these spoken phrases:
-
-- `log 25`
-- `natural log 10`
-- `tan 45`
-- `cosine 60`
-- `seventeen percent of three hundred thirty`
-- `square root of eighty one`
-
-Check that:
-
-- the debug row only appears when there is real voice content
-- the transcript shows the browser transcript when voice input is used
-- the parser produces a valid calculator expression
-- the result appears in the main result area
-
-Also open `voice-parser-tests.html` and confirm the matrix passes before shipping parser changes.
-
-### Editing
-
-- Tap `Edit`
-- place the cursor in the middle of the expression
-- type manually
-- use `Delete`
-- press `Enter`
-
-### Mobile
-
-- keypad order is sensible in portrait view
-- result stays prominent and readable
-- edit buttons remain tappable
-- history panel moves below the calculator
-
-### Desktop
-
-- keyboard shortcuts work when not editing
-- keyboard shortcuts do not interfere while editing
-- shortcuts panel toggles correctly
-- voice button and parsed debug line remain visible
-
-## Known Practical Limits
-
-- Voice quality depends on the browser speech engine
-- Some trig functions are undefined for certain inputs and should show `Error`
-- Browser caching can make an old build appear briefly until refresh
-- The browser test harness verifies parsing and evaluation logic, but it does not replace live microphone testing on target devices
+- Voice input depends on browser speech recognition support
+- Very large powers can overflow and should show `Overflow`
+- This rebuild intentionally avoids the previous service-worker-heavy path so fresh deploys are easier to verify

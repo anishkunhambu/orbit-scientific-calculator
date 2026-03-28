@@ -139,7 +139,7 @@
     </table>
   </main>
 
-  <script src="voice-math.js?v=2026-03-28-v12"></script>
+  <script src="voice-math.js?v=2026-03-28-fresh-1"></script>
   <script src="voice-parser-cases.js"></script>
   <script>
     const tbody = document.getElementById("results");
@@ -159,7 +159,9 @@
 
       const ok = testCase.expectParseFailure
         ? !parsed
-        : parsed && evaluated.ok && nearlyEqual(evaluated.value, testCase.expectedValue);
+        : testCase.expectedMessage
+          ? !evaluated.ok && evaluated.message === testCase.expectedMessage
+          : parsed && evaluated.ok && nearlyEqual(evaluated.value, testCase.expectedValue);
 
       if (ok) {
         passCount += 1;
@@ -170,8 +172,8 @@
         <td class="category">${testCase.category}</td>
         <td><code>${testCase.phrase}</code></td>
         <td><code>${parsed || "UNPARSED"}</code></td>
-        <td><code>${evaluated.ok ? evaluated.value : "ERROR"}</code></td>
-        <td><code>${testCase.expectParseFailure ? "UNPARSED" : testCase.expectedValue}</code></td>
+        <td><code>${evaluated.ok ? evaluated.value : evaluated.message || "ERROR"}</code></td>
+        <td><code>${testCase.expectParseFailure ? "UNPARSED" : (testCase.expectedMessage || testCase.expectedValue)}</code></td>
         <td class="${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</td>
       `;
       tbody.appendChild(row);

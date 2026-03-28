@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f3efe5">
+  <title>Orbit Scientific Calculator</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=2026-03-28-fresh-1">
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Recent Work</p>
+            <h2>History</h2>
+          </div>
+          <button class="ghost-button" id="clear-history" type="button">Clear</button>
+        </div>
+        <ol class="history-list" id="history-list" aria-live="polite"></ol>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Verification</p>
+            <h2>Test Pages</h2>
+          </div>
+        </div>
+        <div class="link-list">
+          <a href="calculator-tests.html" target="_blank" rel="noopener">Calculator Tests</a>
+          <a href="voice-parser-tests.html" target="_blank" rel="noopener">Voice Parser Tests</a>
+          <a href="feature-checklist.html" target="_blank" rel="noopener">Feature Checklist</a>
+        </div>
+      </section>
+    </aside>
+
+    <section class="main-column">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Responsive Web App</p>
+          <h1>Orbit Scientific</h1>
+        </div>
+        <div class="hero-actions">
+          <button class="ghost-button" id="install-app" type="button" hidden>Install</button>
+          <button class="mode-chip" id="angle-toggle" type="button" aria-pressed="false">RAD</button>
+        </div>
+      </header>
+
+      <section class="display-card">
+        <div class="status-row">
+          <span id="mode-indicator">Radians</span>
+          <span id="memory-indicator">Memory: 0</span>
+        </div>
+
+        <div class="voice-row">
+          <button class="ghost-button voice-button" id="voice-toggle" type="button" aria-pressed="false">Voice Input</button>
+          <span class="voice-status" id="voice-status">Ready</span>
+        </div>
+
+        <div class="voice-debug" id="voice-debug" hidden>
+          <span id="voice-heard"></span>
+          <span id="voice-parsed"></span>
+        </div>
+
+        <div class="display-expression" id="display-expression" aria-live="polite"></div>
+        <div class="display-result" id="display-result" aria-live="polite">0</div>
+        <div class="display-subrow">
+          <span>Result</span>
+          <span id="display-meta"></span>
+        </div>
+      </section>
+
+      <div class="toolbar">
+        <button class="ghost-button" id="edit-toggle" type="button" aria-pressed="false">Edit</button>
+        <button class="ghost-button" id="display-delete" type="button">Delete</button>
+        <button class="ghost-button" id="display-clear" type="button">Clear</button>
+      </div>
+
+      <label class="sr-only" for="expression-input">Expression input</label>
+      <input id="expression-input" class="expression-input" type="text" spellcheck="false" autocomplete="off" readonly>
+
+      <section class="memory-row" aria-label="Memory controls">
+        <button type="button" data-memory="mc">MC</button>
+        <button type="button" data-memory="mr">MR</button>
+        <button type="button" data-memory="mplus">M+</button>
+        <button type="button" data-memory="mminus">M-</button>
+        <button type="button" data-memory="ans">ANS</button>
+      </section>
+
+      <section class="keyboard" aria-label="Scientific keypad">
+        <button type="button" class="key utility" data-action="clear">AC</button>
+        <button type="button" class="key utility" data-action="delete">DEL</button>
+        <button type="button" class="key utility" data-insert="(">(</button>
+        <button type="button" class="key utility" data-insert=")">)</button>
+        <button type="button" class="key function" data-wrap="pow2">x²</button>
+        <button type="button" class="key function" data-wrap="sqrt">√x</button>
+
+        <button type="button" class="key function" data-wrap="sin">sin</button>
+        <button type="button" class="key function" data-wrap="cos">cos</button>
+        <button type="button" class="key function" data-wrap="tan">tan</button>
+        <button type="button" class="key function" data-wrap="asin">asin</button>
+        <button type="button" class="key function" data-wrap="acos">acos</button>
+        <button type="button" class="key function" data-wrap="atan">atan</button>
+
+        <button type="button" class="key function" data-wrap="ln">ln</button>
+        <button type="button" class="key function" data-wrap="log">log</button>
+        <button type="button" class="key function" data-wrap="exp">exp</button>
+        <button type="button" class="key function" data-action="pow">xʸ</button>
+        <button type="button" class="key function" data-insert="pi">π</button>
+        <button type="button" class="key function" data-insert="e">e</button>
+
+        <button type="button" class="key number" data-insert="7">7</button>
+        <button type="button" class="key number" data-insert="8">8</button>
+        <button type="button" class="key number" data-insert="9">9</button>
+        <button type="button" class="key operator" data-insert="/">÷</button>
+        <button type="button" class="key function" data-wrap="percent">%</button>
+        <button type="button" class="key function" data-wrap="fact">n!</button>
+
+        <button type="button" class="key number" data-insert="4">4</button>
+        <button type="button" class="key number" data-insert="5">5</button>
+        <button type="button" class="key number" data-insert="6">6</button>
+        <button type="button" class="key operator" data-insert="*">×</button>
+        <button type="button" class="key function" data-wrap="inv">1/x</button>
+        <button type="button" class="key function" data-wrap="abs">|x|</button>
+
+        <button type="button" class="key number" data-insert="1">1</button>
+        <button type="button" class="key number" data-insert="2">2</button>
+        <button type="button" class="key number" data-insert="3">3</button>
+        <button type="button" class="key operator" data-insert="-">-</button>
+        <button type="button" class="key utility" data-action="negate">+/-</button>
+        <button type="button" class="key function" data-insert="rand()">rand</button>
+
+        <button type="button" class="key number span-2" data-insert="0">0</button>
+        <button type="button" class="key number" data-insert=".">.</button>
+        <button type="button" class="key operator" data-insert="+">+</button>
+        <button type="button" class="key accent" data-action="equals">=</button>
+      </section>
+    </section>
+  </main>
+
+  <script src="voice-math.js?v=2026-03-28-fresh-1"></script>
+  <script src="script.js?v=2026-03-28-fresh-1"></script>
+</body>
+</html>

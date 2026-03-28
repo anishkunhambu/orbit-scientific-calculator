@@ -76,7 +76,7 @@
 <body>
   <main>
     <h1>Feature Verification Checklist</h1>
-    <p class="intro">Use this page as the manual test companion for desktop, mobile, voice, editing, history, and PWA behavior.</p>
+    <p class="intro">Use this page as the manual test companion for desktop, mobile, voice, editing, history, and deployment behavior.</p>
 
     <section class="grid">
       <article class="card">
@@ -95,7 +95,7 @@
           <li>Check `sqrt(81)` gives `9`.</li>
           <li>Check `log(100)` gives `2`.</li>
           <li>Check `ln(e)` gives `1`.</li>
-          <li>Check `5!` gives `120`.</li>
+          <li>Check `fact(5)` gives `120`.</li>
           <li>Check `17% of 330` gives `56.1`.</li>
         </ul>
       </article>
@@ -152,12 +152,12 @@
       </article>
 
       <article class="card">
-        <h2>PWA and Updates</h2>
+        <h2>Deploy and Refresh</h2>
         <ul>
           <li>Deploy changes and refresh once.</li>
           <li>Confirm updated JS/CSS loads after redeploy.</li>
-          <li>If installed, reopen the app and confirm the new build appears.</li>
           <li>Confirm stale parser behavior does not persist after refresh.</li>
+          <li>Confirm the test pages load the same fresh engine build.</li>
         </ul>
       </article>
     </section>

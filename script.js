@@ -1,195 +1,44 @@
-const expressionInput = document.getElementById("expression");
-const resultOutput = document.getElementById("result");
-const historyOutput = document.getElementById("history");
+const expressionInput = document.getElementById("expression-input");
+const displayExpression = document.getElementById("display-expression");
+const displayResult = document.getElementById("display-result");
+const displayMeta = document.getElementById("display-meta");
 const modeIndicator = document.getElementById("mode-indicator");
 const memoryIndicator = document.getElementById("memory-indicator");
 const angleToggle = document.getElementById("angle-toggle");
-const keyboard = document.querySelector(".keyboard");
-const quickActions = document.querySelector(".quick-actions");
-const historyList = document.getElementById("history-list");
-const clearHistoryButton = document.getElementById("clear-history");
-const shortcutToggle = document.getElementById("shortcut-toggle");
-const shortcutPanel = document.getElementById("shortcut-panel");
-const installButton = document.getElementById("install-app");
 const voiceToggle = document.getElementById("voice-toggle");
 const voiceStatus = document.getElementById("voice-status");
 const voiceDebug = document.getElementById("voice-debug");
 const voiceHeard = document.getElementById("voice-heard");
 const voiceParsed = document.getElementById("voice-parsed");
-const primaryResult = document.getElementById("primary-result");
+const clearHistoryButton = document.getElementById("clear-history");
+const historyList = document.getElementById("history-list");
+const installButton = document.getElementById("install-app");
 const editToggle = document.getElementById("edit-toggle");
 const displayDelete = document.getElementById("display-delete");
 const displayClear = document.getElementById("display-clear");
-const appVersion = window.ORBIT_APP_VERSION || "dev";
+const keyboard = document.querySelector(".keyboard");
+const memoryRow = document.querySelector(".memory-row");
 
-let expression = "0";
+const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
+const HISTORY_KEY = "orbitScientificFreshHistory";
+
+let expression = "";
 let lastAnswer = 0;
 let memoryValue = 0;
 let isDegreeMode = false;
-let deferredInstallPrompt = null;
-const storageKey = "orbitScientificHistory";
-const historyLimit = 10;
-let calculationHistory = loadHistory();
-let recognition = null;
 let isListening = false;
-let isEditMode = false;
-let suspendedExpressionPreview = "";
-
-const previewReplacements = [
-  [/Math\.PI/g, "π"],
-  [/Math\.E/g, "e"],
-  [/Math\.sqrt\(/g, "sqrt("],
-  [/Math\.sin\(/g, "sin("],
-  [/Math\.cos\(/g, "cos("],
-  [/Math\.tan\(/g, "tan("],
-  [/cot\(/g, "cot("],
-  [/sec\(/g, "sec("],
-  [/csc\(/g, "csc("],
-  [/Math\.asin\(/g, "asin("],
-  [/Math\.acos\(/g, "acos("],
-  [/Math\.atan\(/g, "atan("],
-  [/acot\(/g, "acot("],
-  [/asec\(/g, "asec("],
-  [/acsc\(/g, "acsc("],
-  [/Math\.log10\(/g, "log("],
-  [/Math\.log\(/g, "ln("],
-  [/Math\.exp\(/g, "exp("],
-  [/Math\.abs\(/g, "abs("],
-  [/Math\.random\(\)/g, "rand()"],
-  [/factorial\(/g, "fact("],
-  [/percent\(/g, "percent("],
-  [/ans/g, "ans"]
-];
-
-const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-function updateDisplay(previewValue = null) {
-  const formattedExpression = formatPreview(expression);
-  expressionInput.value = isEditMode
-    ? expression
-    : formattedExpression === "0"
-      ? ""
-      : formattedExpression;
-  const visibleResult = previewValue ?? formatNumber(lastAnswer);
-  primaryResult.textContent = visibleResult;
-  resultOutput.textContent = "";
-  memoryIndicator.textContent = `Memory: ${formatNumber(memoryValue)}`;
-  modeIndicator.textContent = isDegreeMode ? "Degrees" : "Radians";
-  angleToggle.textContent = isDegreeMode ? "DEG" : "RAD";
-  angleToggle.setAttribute("aria-pressed", String(isDegreeMode));
-  editToggle.setAttribute("aria-pressed", String(isEditMode));
-  editToggle.textContent = isEditMode ? "Done" : "Edit";
-}
-
-function setVoiceStatus(message) {
-  voiceStatus.textContent = message;
-}
-
-function setVoiceDebug(heard = "", parsed = "") {
-  const heardValue = (heard || "").trim();
-  const parsedValue = (parsed || "").trim();
-
-  voiceHeard.textContent = heardValue;
-  voiceParsed.textContent = parsedValue;
-
-  if (!heardValue && !parsedValue) {
-    voiceDebug.hidden = true;
-    return;
-  }
-
-  voiceDebug.hidden = false;
-}
-
-function resetVoiceResultState() {
-  historyOutput.textContent = "";
-  primaryResult.textContent = "";
-  resultOutput.textContent = "";
-  expressionInput.value = "";
-}
-
-function suspendCurrentPreview() {
-  suspendedExpressionPreview = expressionInput.value;
-  expressionInput.value = "";
-}
-
-function restoreSuspendedPreview() {
-  expressionInput.value = suspendedExpressionPreview;
-}
-
-function clearSuspendedPreview() {
-  suspendedExpressionPreview = "";
-}
-
-function setListeningState(listening) {
-  isListening = listening;
-  voiceToggle.setAttribute("aria-pressed", String(listening));
-  voiceToggle.textContent = listening ? "Listening..." : "Voice Input";
-}
-
-function setEditMode(enabled) {
-  isEditMode = enabled;
-  expressionInput.readOnly = !enabled;
-  expressionInput.inputMode = enabled ? "text" : "none";
-  expressionInput.classList.toggle("is-editing", enabled);
-  if (enabled) {
-    updateDisplay(getPreviewValue());
-    requestAnimationFrame(() => {
-      expressionInput.focus();
-      const cursor = expressionInput.value.length;
-      expressionInput.setSelectionRange(cursor, cursor);
-    });
-    return;
-  }
-  expressionInput.blur();
-  updateDisplay(getPreviewValue());
-}
-
-function formatPreview(value) {
-  let preview = value;
-  for (const [pattern, replacement] of previewReplacements) {
-    preview = preview.replace(pattern, replacement);
-  }
-  return preview;
-}
-
-function formatNumber(value) {
-  if (!Number.isFinite(value)) {
-    return "Error";
-  }
-  if (Number.isInteger(value)) {
-    return value.toString();
-  }
-  const rounded = Number.parseFloat(value.toFixed(12));
-  return rounded.toString();
-}
-
-function getPreviewValue() {
-  const evaluated = tryEvaluate(expression);
-  return evaluated.ok ? formatNumber(evaluated.value) : "";
-}
-
-function getEvaluationMessage(evaluated) {
-  if (evaluated.ok) {
-    return formatNumber(evaluated.value);
-  }
-  if ((evaluated.message || "").toLowerCase().includes("overflow")) {
-    return "Overflow";
-  }
-  return "Error";
-}
-
-function getEvaluationStatusMessage(prefix, evaluated) {
-  const detail = evaluated && evaluated.message ? ` (${evaluated.message})` : "";
-  return `${prefix}${detail}`;
-}
+let isEditing = false;
+let recognition = null;
+let deferredInstallPrompt = null;
+let historyEntries = loadHistory();
 
 function loadHistory() {
   try {
-    const saved = localStorage.getItem(storageKey);
-    if (!saved) {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) {
       return [];
     }
-    const parsed = JSON.parse(saved);
+    const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     return [];
@@ -197,24 +46,19 @@ function loadHistory() {
 }
 
 function saveHistory() {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(calculationHistory));
-  } catch (error) {
-    return;
-  }
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(historyEntries.slice(0, 12)));
 }
 
 function renderHistory() {
   historyList.innerHTML = "";
-
-  if (calculationHistory.length === 0) {
-    const emptyItem = document.createElement("li");
-    emptyItem.textContent = "No calculations yet. Your recent results will appear here.";
-    historyList.appendChild(emptyItem);
+  if (historyEntries.length === 0) {
+    const item = document.createElement("li");
+    item.textContent = "No calculations yet.";
+    historyList.appendChild(item);
     return;
   }
 
-  calculationHistory.forEach(entry => {
+  historyEntries.forEach(entry => {
     const item = document.createElement("li");
     item.innerHTML = `
       <div class="history-entry">
@@ -227,144 +71,152 @@ function renderHistory() {
   });
 }
 
-function addHistoryEntry(rawExpression, value) {
-  const timestamp = new Date().toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
-
-  calculationHistory.unshift({
-    expression: formatPreview(rawExpression),
-    result: formatNumber(value),
-    timestamp
-  });
-
-  calculationHistory = calculationHistory.slice(0, historyLimit);
-  saveHistory();
-  renderHistory();
+function setVoiceStatus(message) {
+  voiceStatus.textContent = message;
 }
 
-function normalizeExpression(value) {
-  if (value === "0") {
-    return "";
-  }
-  return value;
+function setVoiceDebug(heard = "", parsed = "") {
+  voiceHeard.textContent = heard;
+  voiceParsed.textContent = parsed;
+  voiceDebug.hidden = !heard && !parsed;
 }
 
-function appendToExpression(token) {
-  const next = normalizeExpression(expression) + token;
-  expression = next || "0";
-  updateLivePreview();
-}
-
-function appendImplicitToken(token) {
-  const base = normalizeExpression(expression);
-  const shouldMultiply =
-    base &&
-    /(\d|\)|Math\.PI|Math\.E|ans)$/.test(base);
-
-  expression = `${base}${shouldMultiply ? "*" : ""}${token}` || "0";
-  updateLivePreview();
-}
-
-function wrapCurrentExpression(wrapper) {
-  const base = expression === "0" ? "0" : expression;
-  expression = wrapper(base);
-  updateLivePreview();
-}
-
-function updateLivePreview() {
-  const previewResult = tryEvaluate(expression);
-  const normalized = (expression || "").trim();
-  const isEmpty = normalized === "" || normalized === "0";
-  const isIncomplete = /[\+\-\*\/\(]$/.test(normalized) || /\*\*$/.test(normalized);
-
-  if (previewResult.ok) {
-    updateDisplay(formatNumber(previewResult.value));
-    return;
-  }
-
-  if (isEmpty) {
-    updateDisplay(formatNumber(lastAnswer || 0));
-    return;
-  }
-
-  if (isIncomplete) {
-    updateDisplay("");
-    return;
-  }
-
-  updateDisplay(getEvaluationMessage(previewResult));
-}
-
-function setExpression(nextExpression) {
-  expression = nextExpression || "0";
-  updateLivePreview();
-}
-
-function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
-  if (!transcriptExpression) {
-    return;
-  }
-
-  const normalized = transcriptExpression.trim();
-  if (normalized === "=") {
-    const committed = commitResult();
-    if (!committed.ok) {
-      setVoiceStatus(getEvaluationStatusMessage(`Couldn't evaluate: ${originalTranscript || "="}`, committed));
-    }
-    return;
-  }
-
-  if (normalized === "clear") {
-    clearExpression();
-    return;
-  }
-
-  const evaluated = tryEvaluate(normalized);
-  setExpression(normalized);
-
-  if (evaluated.ok) {
-    const committed = commitResult();
-    if (!committed.ok) {
-      historyOutput.textContent = originalTranscript
-        ? `Voice heard: ${originalTranscript}`
-        : "Voice input captured";
-      primaryResult.textContent = getEvaluationMessage(committed);
-      resultOutput.textContent = "";
-      setVoiceStatus(getEvaluationStatusMessage(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`, committed));
-      return;
-    }
-
-    clearSuspendedPreview();
-    if (originalTranscript) {
-      historyOutput.textContent = `Voice: ${originalTranscript}`;
-    }
-    setVoiceStatus(`Result ready for: ${originalTranscript || formatPreview(normalized)}`);
-    return;
-  }
-
-  historyOutput.textContent = originalTranscript
-    ? `Voice heard: ${originalTranscript}`
-    : "Voice input captured";
-  expressionInput.value = "";
-  primaryResult.textContent = getEvaluationMessage(evaluated);
-  resultOutput.textContent = "";
-  setVoiceStatus(getEvaluationStatusMessage(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`, evaluated));
-}
-
-function tryEvaluate(rawExpression) {
-  return window.VoiceMath.tryEvaluate(rawExpression, {
+function getEvaluationResult(targetExpression = expression) {
+  return window.OrbitMath.evaluateExpression(targetExpression, {
     lastAnswer,
     isDegreeMode
   });
 }
 
-function parseSpokenMath(transcript) {
-  return window.VoiceMath.parseSpokenMath(transcript);
+function formatExpression(targetExpression = expression) {
+  return (targetExpression || "")
+    .replace(/\bpi\b/g, "π")
+    .replace(/\be\b/g, "e")
+    .replace(/\*/g, "×")
+    .replace(/\//g, "÷");
 }
 
-function initializeVoiceRecognition() {
+function updateDisplay() {
+  const evaluation = getEvaluationResult();
+  expressionInput.value = expression;
+  displayExpression.textContent = formatExpression(expression);
+  displayResult.textContent = evaluation.ok ? window.OrbitMath.formatNumber(evaluation.value) : (expression ? "Error" : "0");
+  displayMeta.textContent = evaluation.ok ? "" : (evaluation.message || "");
+  modeIndicator.textContent = isDegreeMode ? "Degrees" : "Radians";
+  memoryIndicator.textContent = `Memory: ${window.OrbitMath.formatNumber(memoryValue)}`;
+  angleToggle.textContent = isDegreeMode ? "DEG" : "RAD";
+  angleToggle.setAttribute("aria-pressed", String(isDegreeMode));
+  editToggle.textContent = isEditing ? "Done" : "Edit";
+  editToggle.setAttribute("aria-pressed", String(isEditing));
+  expressionInput.readOnly = !isEditing;
+  expressionInput.classList.toggle("is-editing", isEditing);
+}
+
+function addHistoryEntry(sourceExpression, resultValue) {
+  historyEntries.unshift({
+    expression: formatExpression(sourceExpression) || "0",
+    result: window.OrbitMath.formatNumber(resultValue),
+    timestamp: new Date().toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short"
+    })
+  });
+  historyEntries = historyEntries.slice(0, 12);
+  saveHistory();
+  renderHistory();
+}
+
+function appendToken(token) {
+  const normalized = token === "(" && expression && /[\d)a-z]$/i.test(expression)
+    ? `*${token}`
+    : token;
+  expression += normalized;
+  updateDisplay();
+}
+
+function wrapExpression(kind) {
+  const target = expression || "0";
+  const wrappers = {
+    sin: value => `sin(${value})`,
+    cos: value => `cos(${value})`,
+    tan: value => `tan(${value})`,
+    asin: value => `asin(${value})`,
+    acos: value => `acos(${value})`,
+    atan: value => `atan(${value})`,
+    log: value => `log(${value})`,
+    ln: value => `ln(${value})`,
+    sqrt: value => `sqrt(${value})`,
+    abs: value => `abs(${value})`,
+    cbrt: value => `cbrt(${value})`,
+    exp: value => `exp(${value})`,
+    fact: value => `fact(${value})`,
+    percent: value => `percent(${value})`,
+    inv: value => `(1/(${value}))`,
+    pow2: value => `((${value})**2)`
+  };
+  expression = wrappers[kind](target);
+  updateDisplay();
+}
+
+function clearAll() {
+  expression = "";
+  setVoiceDebug();
+  setVoiceStatus("Ready");
+  updateDisplay();
+}
+
+function backspace() {
+  expression = expression.slice(0, -1);
+  updateDisplay();
+}
+
+function commitExpression(source = "manual") {
+  const evaluation = getEvaluationResult();
+  if (!evaluation.ok) {
+    displayResult.textContent = evaluation.message && evaluation.message.includes("overflow") ? "Overflow" : "Error";
+    displayMeta.textContent = evaluation.message || "";
+    setVoiceStatus(source === "voice" ? `Couldn't evaluate (${evaluation.message})` : "Invalid expression");
+    return evaluation;
+  }
+
+  lastAnswer = evaluation.value;
+  addHistoryEntry(expression, evaluation.value);
+  displayResult.textContent = window.OrbitMath.formatNumber(evaluation.value);
+  displayMeta.textContent = expression ? `${formatExpression(expression)} =` : "";
+  if (source === "voice") {
+    setVoiceStatus("Voice result ready.");
+  }
+  expression = window.OrbitMath.formatNumber(evaluation.value);
+  updateDisplay();
+  return evaluation;
+}
+
+function useMemory(action) {
+  const evaluation = getEvaluationResult();
+  const currentValue = evaluation.ok ? evaluation.value : lastAnswer;
+  if (action === "mc") {
+    memoryValue = 0;
+  } else if (action === "mr") {
+    appendToken(window.OrbitMath.formatNumber(memoryValue));
+    return;
+  } else if (action === "mplus") {
+    memoryValue += currentValue;
+  } else if (action === "mminus") {
+    memoryValue -= currentValue;
+  } else if (action === "ans") {
+    appendToken("ans");
+    return;
+  }
+  updateDisplay();
+}
+
+function setListening(listening) {
+  isListening = listening;
+  voiceToggle.setAttribute("aria-pressed", String(listening));
+  voiceToggle.textContent = listening ? "Listening..." : "Voice Input";
+}
+
+function initializeVoice() {
   if (!SpeechRecognitionApi) {
     voiceToggle.disabled = true;
     setVoiceStatus("Voice input is not supported in this browser.");
@@ -373,168 +225,53 @@ function initializeVoiceRecognition() {
 
   recognition = new SpeechRecognitionApi();
   recognition.lang = "en-US";
-  recognition.continuous = false;
   recognition.interimResults = false;
+  recognition.continuous = false;
 
   recognition.addEventListener("start", () => {
-    setListeningState(true);
-    setVoiceStatus("Listening for a math expression...");
+    setListening(true);
+    setVoiceStatus("Listening for a calculation...");
     setVoiceDebug();
-    suspendCurrentPreview();
-    resetVoiceResultState();
   });
 
   recognition.addEventListener("result", event => {
-    const transcript = Array.from(event.results)
-      .map(result => result[0].transcript)
-      .join(" ");
+    const heard = Array.from(event.results).map(result => result[0].transcript).join(" ").trim();
+    const parsed = window.OrbitMath.parseSpokenMath(heard);
+    setVoiceDebug(heard, parsed);
 
-    const parsedExpression = parseSpokenMath(transcript);
-    setVoiceDebug(transcript, parsedExpression);
-    if (!parsedExpression) {
-      resetVoiceResultState();
-      historyOutput.textContent = `Voice heard: ${transcript}`;
-      expressionInput.value = "";
-      primaryResult.textContent = "Error";
-      setVoiceStatus(`Couldn't parse: "${transcript}"`);
+    if (!parsed) {
+      setVoiceStatus(`Couldn't parse: ${heard}`);
+      displayResult.textContent = "Error";
+      displayMeta.textContent = "Voice parsing failed.";
       return;
     }
 
-    appendVoiceExpression(parsedExpression, transcript);
+    if (parsed === "clear") {
+      clearAll();
+      return;
+    }
+
+    if (parsed === "=") {
+      commitExpression("voice");
+      return;
+    }
+
+    expression = parsed;
+    updateDisplay();
+    const evaluation = commitExpression("voice");
+    if (!evaluation.ok) {
+      setVoiceStatus(`Couldn't evaluate (${evaluation.message})`);
+    }
   });
 
   recognition.addEventListener("error", event => {
     setVoiceStatus(`Voice input error: ${event.error}`);
-    resetVoiceResultState();
-    if (event.error === "no-speech") {
-      setVoiceDebug();
-    }
+    setListening(false);
   });
 
   recognition.addEventListener("end", () => {
-    setListeningState(false);
-    if (!primaryResult.textContent && !historyOutput.textContent) {
-      restoreSuspendedPreview();
-    } else {
-      clearSuspendedPreview();
-    }
+    setListening(false);
   });
-}
-
-function commitResult() {
-  const evaluated = tryEvaluate(expression);
-  if (!evaluated.ok) {
-    const message = getEvaluationMessage(evaluated);
-    primaryResult.textContent = message;
-    resultOutput.textContent = message;
-    historyOutput.textContent = message === "Overflow" ? "Result overflow" : "Invalid expression";
-    return evaluated;
-  }
-
-  lastAnswer = evaluated.value;
-  addHistoryEntry(expression, evaluated.value);
-  historyOutput.textContent = `${formatPreview(expression)} =`;
-  expression = formatNumber(evaluated.value);
-  updateDisplay(formatNumber(evaluated.value));
-  return evaluated;
-}
-
-function handleFunction(fnName) {
-  const functionMap = {
-    sin: value => `safeTrig("sin", ${value})`,
-    cos: value => `safeTrig("cos", ${value})`,
-    tan: value => `safeTrig("tan", ${value})`,
-    asin: value => `safeTrig("asin", ${value})`,
-    acos: value => `safeTrig("acos", ${value})`,
-    atan: value => `safeTrig("atan", ${value})`,
-    ln: value => `Math.log(${value})`,
-    log: value => `Math.log10(${value})`,
-    exp: value => `Math.exp(${value})`,
-    sqrt: value => `Math.sqrt(${value})`,
-    square: value => `((${value})**2)`,
-    inverse: value => `(1/(${value}))`,
-    abs: value => `Math.abs(${value})`,
-    pow: value => `((${value})**)`,
-    percent: value => `percent(${value})`,
-    factorial: value => `factorial(${value})`,
-    rand: () => "Math.random()"
-  };
-
-  const builder = functionMap[fnName];
-  if (!builder) {
-    return;
-  }
-
-  if (fnName === "pow") {
-    setExpression(builder(expression === "0" ? "0" : expression));
-    return;
-  }
-
-  if (fnName === "rand") {
-    appendImplicitToken(builder());
-    return;
-  }
-
-  wrapCurrentExpression(builder);
-}
-
-function toggleSign() {
-  wrapCurrentExpression(value => `(-1*(${value}))`);
-}
-
-function backspace() {
-  const trimmed = expression.slice(0, -1);
-  expression = trimmed || "0";
-  updateLivePreview();
-}
-
-function deleteFromExpressionInput() {
-  const start = expressionInput.selectionStart ?? expression.length;
-  const end = expressionInput.selectionEnd ?? expression.length;
-
-  if (start !== end) {
-    expression = `${expression.slice(0, start)}${expression.slice(end)}` || "0";
-    updateLivePreview();
-    requestAnimationFrame(() => expressionInput.setSelectionRange(start, start));
-    return;
-  }
-
-  if (start <= 0) {
-    return;
-  }
-
-  expression = `${expression.slice(0, start - 1)}${expression.slice(start)}` || "0";
-  updateLivePreview();
-  requestAnimationFrame(() => expressionInput.setSelectionRange(start - 1, start - 1));
-}
-
-function clearExpression() {
-  expression = "0";
-  historyOutput.textContent = "";
-  clearSuspendedPreview();
-  setVoiceDebug();
-  updateDisplay("0");
-}
-
-function updateMemory(action) {
-  const current = tryEvaluate(expression);
-  const currentValue = current.ok ? current.value : lastAnswer;
-
-  if (action === "mc") {
-    memoryValue = 0;
-  } else if (action === "mr") {
-    appendImplicitToken(formatNumber(memoryValue));
-    return;
-  } else if (action === "mplus") {
-    memoryValue += currentValue;
-  } else if (action === "mminus") {
-    memoryValue -= currentValue;
-  } else if (action === "ans") {
-    appendImplicitToken("ans");
-    return;
-  }
-
-  updateDisplay(getPreviewValue());
 }
 
 keyboard.addEventListener("click", event => {
@@ -543,148 +280,138 @@ keyboard.addEventListener("click", event => {
     return;
   }
 
-  const { value, action, fn, constant } = button.dataset;
+  if (button.dataset.insert) {
+    appendToken(button.dataset.insert);
+    return;
+  }
 
-  if (value) {
-    if (value === "(") {
-      appendImplicitToken(value);
+  if (button.dataset.wrap) {
+    if (button.dataset.wrap === "pow") {
+      appendToken("**");
       return;
     }
-    appendToExpression(value);
+    wrapExpression(button.dataset.wrap);
     return;
   }
 
-  if (constant === "pi") {
-    appendImplicitToken("Math.PI");
+  if (button.dataset.action === "clear") {
+    clearAll();
     return;
   }
-
-  if (constant === "e") {
-    appendImplicitToken("Math.E");
-    return;
-  }
-
-  if (action === "clear") {
-    clearExpression();
-    return;
-  }
-
-  if (action === "delete") {
+  if (button.dataset.action === "delete") {
     backspace();
     return;
   }
-
-  if (action === "negate") {
-    toggleSign();
+  if (button.dataset.action === "negate") {
+    expression = expression ? `(-1*(${expression}))` : "-";
+    updateDisplay();
     return;
   }
-
-  if (action === "equals") {
-    commitResult();
-    return;
-  }
-
-  if (fn) {
-    handleFunction(fn);
+  if (button.dataset.action === "equals") {
+    commitExpression();
   }
 });
 
-quickActions.addEventListener("click", event => {
+memoryRow.addEventListener("click", event => {
   const button = event.target.closest("button");
-  if (!button) {
-    return;
+  if (button) {
+    useMemory(button.dataset.memory);
   }
-  updateMemory(button.dataset.action);
 });
 
 angleToggle.addEventListener("click", () => {
   isDegreeMode = !isDegreeMode;
-  updateLivePreview();
+  updateDisplay();
 });
 
 clearHistoryButton.addEventListener("click", () => {
-  calculationHistory = [];
+  historyEntries = [];
   saveHistory();
   renderHistory();
-});
-
-shortcutToggle.addEventListener("click", () => {
-  const isHidden = shortcutPanel.hasAttribute("hidden");
-  if (isHidden) {
-    shortcutPanel.removeAttribute("hidden");
-    shortcutToggle.textContent = "Hide";
-    shortcutToggle.setAttribute("aria-expanded", "true");
-    return;
-  }
-
-  shortcutPanel.setAttribute("hidden", "");
-  shortcutToggle.textContent = "Show";
-  shortcutToggle.setAttribute("aria-expanded", "false");
-});
-
-installButton.addEventListener("click", async () => {
-  if (!deferredInstallPrompt) {
-    return;
-  }
-
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  installButton.hidden = true;
 });
 
 voiceToggle.addEventListener("click", () => {
   if (!recognition) {
     return;
   }
-
   if (isListening) {
     recognition.stop();
     return;
   }
-
   recognition.start();
 });
 
 editToggle.addEventListener("click", () => {
-  setEditMode(!isEditMode);
+  isEditing = !isEditing;
+  updateDisplay();
+  if (isEditing) {
+    expressionInput.focus();
+    expressionInput.setSelectionRange(expressionInput.value.length, expressionInput.value.length);
+  } else {
+    expressionInput.blur();
+  }
 });
 
 displayDelete.addEventListener("click", () => {
-  if (isEditMode) {
-    deleteFromExpressionInput();
-  } else {
-    backspace();
-  }
-  if (isEditMode) {
+  if (isEditing) {
+    const start = expressionInput.selectionStart ?? expression.length;
+    const end = expressionInput.selectionEnd ?? expression.length;
+    if (start !== end) {
+      expression = `${expression.slice(0, start)}${expression.slice(end)}`;
+    } else if (start > 0) {
+      expression = `${expression.slice(0, start - 1)}${expression.slice(start)}`;
+    }
+    updateDisplay();
     expressionInput.focus();
-  }
-});
-
-displayClear.addEventListener("click", () => {
-  clearExpression();
-  if (isEditMode) {
-    expressionInput.focus();
-  }
-});
-
-expressionInput.addEventListener("input", event => {
-  if (!isEditMode) {
+    const cursor = Math.max(0, start - (start === end ? 1 : 0));
+    expressionInput.setSelectionRange(cursor, cursor);
     return;
   }
-  expression = event.target.value.trim() || "0";
-  updateLivePreview();
+  backspace();
+});
+
+displayClear.addEventListener("click", clearAll);
+
+expressionInput.addEventListener("input", event => {
+  if (!isEditing) {
+    return;
+  }
+  expression = event.target.value;
+  updateDisplay();
 });
 
 expressionInput.addEventListener("keydown", event => {
-  if (!isEditMode) {
+  if (!isEditing) {
     return;
   }
-
   if (event.key === "Enter") {
     event.preventDefault();
-    commitResult();
-    setEditMode(false);
+    commitExpression();
+    isEditing = false;
+    updateDisplay();
+  }
+});
+
+window.addEventListener("keydown", event => {
+  if (isEditing || event.target === expressionInput) {
+    return;
+  }
+  const allowed = "0123456789+-*/().";
+  if (allowed.includes(event.key)) {
+    appendToken(event.key);
+    return;
+  }
+  if (event.key === "Enter" || event.key === "=") {
+    event.preventDefault();
+    commitExpression();
+    return;
+  }
+  if (event.key === "Backspace") {
+    backspace();
+    return;
+  }
+  if (event.key === "Delete") {
+    clearAll();
   }
 });
 
@@ -694,62 +421,16 @@ window.addEventListener("beforeinstallprompt", event => {
   installButton.hidden = false;
 });
 
-window.addEventListener("appinstalled", () => {
+installButton.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) {
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
   deferredInstallPrompt = null;
   installButton.hidden = true;
 });
 
-window.addEventListener("keydown", event => {
-  if (isEditMode || event.target === expressionInput) {
-    return;
-  }
-
-  const allowedKeys = "0123456789+-*/().";
-  if (allowedKeys.includes(event.key)) {
-    appendToExpression(event.key);
-    return;
-  }
-
-  if (event.key === "Enter" || event.key === "=") {
-    event.preventDefault();
-    commitResult();
-    return;
-  }
-
-  if (event.key === "Backspace") {
-    backspace();
-    return;
-  }
-
-  if (event.key === "Delete" || event.key.toLowerCase() === "c") {
-    clearExpression();
-  }
-});
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", async () => {
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(registration => registration.unregister()));
-
-      if ("caches" in window) {
-        const cacheKeys = await caches.keys();
-        await Promise.all(
-          cacheKeys
-            .filter(key => key.startsWith("orbit-scientific-"))
-            .map(key => caches.delete(key))
-        );
-      }
-
-      console.info(`Orbit Scientific build ${appVersion} loaded (cache-disabled mode)`);
-      setVoiceStatus("Latest calculator logic loaded.");
-    } catch (error) {
-      historyOutput.textContent = historyOutput.textContent || "Cache reset failed.";
-    }
-  });
-}
-
-initializeVoiceRecognition();
+initializeVoice();
 renderHistory();
-setVoiceDebug();
-updateDisplay("0");
+updateDisplay();
