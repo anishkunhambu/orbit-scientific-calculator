@@ -32,6 +32,7 @@ let calculationHistory = loadHistory();
 let recognition = null;
 let isListening = false;
 let isEditMode = false;
+let suspendedExpressionPreview = "";
 
 const previewReplacements = [
   [/Math\.PI/g, "π"],
@@ -102,6 +103,20 @@ function resetVoiceResultState() {
   historyOutput.textContent = "";
   primaryResult.textContent = "";
   resultOutput.textContent = "";
+  expressionInput.value = "";
+}
+
+function suspendCurrentPreview() {
+  suspendedExpressionPreview = expressionInput.value;
+  expressionInput.value = "";
+}
+
+function restoreSuspendedPreview() {
+  expressionInput.value = suspendedExpressionPreview;
+}
+
+function clearSuspendedPreview() {
+  suspendedExpressionPreview = "";
 }
 
 function setListeningState(listening) {
@@ -292,6 +307,7 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
 
   if (evaluated.ok) {
     commitResult();
+    clearSuspendedPreview();
     if (originalTranscript) {
       historyOutput.textContent = `Voice: ${originalTranscript}`;
     }
@@ -334,6 +350,7 @@ function initializeVoiceRecognition() {
     setListeningState(true);
     setVoiceStatus("Listening for a math expression...");
     setVoiceDebug();
+    suspendCurrentPreview();
     resetVoiceResultState();
   });
 
@@ -364,6 +381,11 @@ function initializeVoiceRecognition() {
 
   recognition.addEventListener("end", () => {
     setListeningState(false);
+    if (!primaryResult.textContent && !historyOutput.textContent) {
+      restoreSuspendedPreview();
+    } else {
+      clearSuspendedPreview();
+    }
   });
 }
 
@@ -455,6 +477,7 @@ function deleteFromExpressionInput() {
 function clearExpression() {
   expression = "0";
   historyOutput.textContent = "";
+  clearSuspendedPreview();
   setVoiceDebug();
   updateDisplay("0");
 }

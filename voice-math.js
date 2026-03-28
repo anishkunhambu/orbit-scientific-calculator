@@ -124,11 +124,14 @@
     ["subtracted from", "__OP_SUB__"],
     ["natural logarithm of", "__FN_LN__"],
     ["natural log of", "__FN_LN__"],
+    ["ln of", "__FN_LN__"],
     ["common logarithm of", "__FN_LOG__"],
     ["common log of", "__FN_LOG__"],
     ["logarithm of", "__FN_LOG__"],
     ["log base 10 of", "__FN_LOG__"],
+    ["log of", "__FN_LOG__"],
     ["square root of", "__FN_SQRT__"],
+    ["root of", "__FN_SQRT__"],
     ["cube root of", "__FN_CBRT__"],
     ["absolute value of", "__FN_ABS__"],
     ["modulus of", "__FN_ABS__"],
@@ -386,6 +389,11 @@
     });
 
     parsed = applyCanonicalVoicePhrases(parsed);
+    parsed = parsed.replace(
+      /\b(sin|sine|cos|cosine|tan|tangent|cot|cotangent|sec|secant|csc|cosec|cosecant|asin|acos|atan|acot|asec|acsc|ln|log|logarithm|sqrt|root|cbrt|abs|modulus|mod|factorial|percent|exp)\s+of\b/g,
+      "$1"
+    );
+    parsed = parsed.replace(/\b(__FN_[A-Z]+__)\s+of\b/g, "$1");
     parsed = parsed.replace(/\bsquared\b/g, "**2");
     parsed = parsed.replace(/\bcubed\b/g, "**3");
     parsed = parsed.replace(/\braised to\b/g, "**");
