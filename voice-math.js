@@ -327,6 +327,7 @@
 
   function normalizeMathArtifacts(input) {
     let normalized = compactParsedExpression(input);
+    normalized = normalized.replace(/\^/g, "**");
     normalized = normalized.replace(/(\d)\.(?=[\)\+\-\*\/]|$)/g, "$1");
     normalized = normalized.replace(/(?:Math\.){2,}/g, "Math.");
     normalized = normalized.replace(/\b(Math\.(?:sqrt|log10|log|abs|exp)|cbrt|factorial|percent)\s+(-?(?:\d+(?:\.\d+)?|ans|Math\.PI|Math\.E|\([^()]+\)))/g, "$1($2)");
