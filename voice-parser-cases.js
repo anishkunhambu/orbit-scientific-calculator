@@ -16,6 +16,7 @@ window.VoiceMathCases = [
   { category: "Trig", phrase: "sin 60", expectedValue: Math.sin(60 * Math.PI / 180) },
   { category: "Trig", phrase: "cos 60", expectedValue: 0.5 },
   { category: "Trig", phrase: "tan 45", expectedValue: 1 },
+  { category: "Trig", phrase: "tangent 45 value", expectedValue: 1 },
   { category: "Inverse Trig", phrase: "inverse sine of 0.5", expectedValue: 30 },
   { category: "Mixed", phrase: "square root of 81 plus 3", expectedValue: 12 },
   { category: "Mixed", phrase: "sin 30 plus cos 60", expectedValue: 1 },

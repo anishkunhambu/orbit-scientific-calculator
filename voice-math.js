@@ -105,6 +105,12 @@
       .replace(/\btanjent\b/g, "tangent")
       .replace(/\bpie\b/g, "pi")
       .replace(/\bellen\b/g, "ln")
+      .replace(/\bsine\b/g, "sin")
+      .replace(/\bcosine\b/g, "cos")
+      .replace(/\btangent\b/g, "tan")
+      .replace(/\binverse sine\b/g, "asin")
+      .replace(/\binverse cosine\b/g, "acos")
+      .replace(/\binverse tangent\b/g, "atan")
       .replace(/\bopen bracket\b|\bopen parenthesis\b/g, "(")
       .replace(/\bclose bracket\b|\bclose parenthesis\b/g, ")")
       .replace(/\bmultiplied by\b|\bmultiply by\b|\btimes\b|\binto\b/g, " * ")
@@ -113,6 +119,7 @@
       .replace(/\bminus\b|\bsubtract\b|\bsubtracted by\b/g, " - ")
       .replace(/\bpoint\b|\bdot\b|\bdecimal\b/g, " . ")
       .replace(/\bwhat is\b|\bwhat's\b|\bhow much is\b|\bplease\b|\bcan you\b|\bcould you\b|\bfind\b|\btell me\b|\bsolve\b|\bgive me\b/g, " ")
+      .replace(/\bvalue\b|\bresult\b|\banswer\b/g, " ")
       .replace(/\bdegrees\b|\bdegree\b|\bradians\b|\bradian\b/g, " ")
       .replace(/\s+/g, " ")
       .trim();
@@ -176,6 +183,7 @@
       ["log base 10 of", " log "],
       ["logarithm of", " log "],
       ["log of", " log "],
+      ["logarithm", " log "],
       ["sine of", " sin "],
       ["cosine of", " cos "],
       ["tangent of", " tan "],
