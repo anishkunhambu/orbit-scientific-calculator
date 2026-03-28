@@ -318,6 +318,7 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
   historyOutput.textContent = originalTranscript
     ? `Voice heard: ${originalTranscript}`
     : "Voice input captured";
+  expressionInput.value = "";
   primaryResult.textContent = "Error";
   resultOutput.textContent = "";
   setVoiceStatus(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`);
@@ -364,6 +365,8 @@ function initializeVoiceRecognition() {
     if (!parsedExpression) {
       resetVoiceResultState();
       historyOutput.textContent = `Voice heard: ${transcript}`;
+      expressionInput.value = "";
+      primaryResult.textContent = "Error";
       setVoiceStatus(`Couldn't parse: "${transcript}"`);
       return;
     }
