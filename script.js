@@ -727,30 +727,25 @@ window.addEventListener("keydown", event => {
 });
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register(`./sw.js?v=${appVersion}`).then(registration => {
-      registration.update();
-      console.info(`Orbit Scientific build ${appVersion} loaded`);
+  window.addEventListener("load", async () => {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(registration => registration.unregister()));
 
-      if (registration.waiting) {
-        setVoiceStatus("Update available. Refresh once for the newest version.");
+      if ("caches" in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(
+          cacheKeys
+            .filter(key => key.startsWith("orbit-scientific-"))
+            .map(key => caches.delete(key))
+        );
       }
 
-      registration.addEventListener("updatefound", () => {
-        const worker = registration.installing;
-        if (!worker) {
-          return;
-        }
-
-        worker.addEventListener("statechange", () => {
-          if (worker.state === "installed" && navigator.serviceWorker.controller) {
-            setVoiceStatus("App updated. Refresh once to load the latest build.");
-          }
-        });
-      });
-    }).catch(() => {
-      historyOutput.textContent = historyOutput.textContent || "Service worker registration failed.";
-    });
+      console.info(`Orbit Scientific build ${appVersion} loaded (cache-disabled mode)`);
+      setVoiceStatus("Latest calculator logic loaded.");
+    } catch (error) {
+      historyOutput.textContent = historyOutput.textContent || "Cache reset failed.";
+    }
   });
 }
 

@@ -1,4 +1,4 @@
-const APP_VERSION = "2026-03-28-v11";
+const APP_VERSION = "2026-03-28-v12";
 const CACHE_NAME = `orbit-scientific-${APP_VERSION}`;
 const APP_ASSETS = [
   "./",
