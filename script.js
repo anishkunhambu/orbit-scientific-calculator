@@ -167,6 +167,16 @@ function getPreviewValue() {
   return evaluated.ok ? formatNumber(evaluated.value) : "";
 }
 
+function getEvaluationMessage(evaluated) {
+  if (evaluated.ok) {
+    return formatNumber(evaluated.value);
+  }
+  if ((evaluated.message || "").toLowerCase().includes("overflow")) {
+    return "Overflow";
+  }
+  return "Error";
+}
+
 function loadHistory() {
   try {
     const saved = localStorage.getItem(storageKey);
@@ -278,7 +288,7 @@ function updateLivePreview() {
     return;
   }
 
-  updateDisplay("Error");
+  updateDisplay(getEvaluationMessage(previewResult));
 }
 
 function setExpression(nextExpression) {
@@ -319,7 +329,7 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
     ? `Voice heard: ${originalTranscript}`
     : "Voice input captured";
   expressionInput.value = "";
-  primaryResult.textContent = "Error";
+  primaryResult.textContent = getEvaluationMessage(evaluated);
   resultOutput.textContent = "";
   setVoiceStatus(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`);
 }
@@ -395,9 +405,10 @@ function initializeVoiceRecognition() {
 function commitResult() {
   const evaluated = tryEvaluate(expression);
   if (!evaluated.ok) {
-    primaryResult.textContent = "Error";
-    resultOutput.textContent = "Error";
-    historyOutput.textContent = "Invalid expression";
+    const message = getEvaluationMessage(evaluated);
+    primaryResult.textContent = message;
+    resultOutput.textContent = message;
+    historyOutput.textContent = message === "Overflow" ? "Result overflow" : "Invalid expression";
     return;
   }
 

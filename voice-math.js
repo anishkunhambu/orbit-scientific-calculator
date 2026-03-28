@@ -475,6 +475,9 @@
       if (typeof value !== "number" || Number.isNaN(value)) {
         throw new Error("Invalid result.");
       }
+      if (!Number.isFinite(value)) {
+        throw new Error("Result overflow.");
+      }
       return { ok: true, value };
     } catch (error) {
       return { ok: false, message: error.message };
