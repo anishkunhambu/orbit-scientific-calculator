@@ -106,8 +106,11 @@
   const canonicalVoicePhrases = [
     ["raised to the power of", "__OP_POW__"],
     ["raised to the power", "__OP_POW__"],
+    ["raise to the power of", "__OP_POW__"],
+    ["raise to the power", "__OP_POW__"],
     ["to the power of", "__OP_POW__"],
     ["to the power", "__OP_POW__"],
+    ["raise to", "__OP_POW__"],
     ["power of", "__OP_POW__"],
     ["multiplied by", "__OP_MUL__"],
     ["multiply by", "__OP_MUL__"],

@@ -15,6 +15,7 @@ window.VoiceMathCases = [
   { category: "Power", phrase: "2 to the power 8", expectedValue: 256 },
   { category: "Power", phrase: "2 to the power of 5", expectedValue: 32 },
   { category: "Power", phrase: "2 raised to the power 5", expectedValue: 32 },
+  { category: "Power", phrase: "2 raise to 2", expectedValue: 4 },
   { category: "Trig", phrase: "cosine of 60", expectedValue: 0.5 },
   { category: "Trig", phrase: "sine of 30", expectedValue: 0.5 },
   { category: "Trig", phrase: "tangent of 45", expectedValue: 1 },
