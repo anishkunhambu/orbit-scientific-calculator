@@ -20,6 +20,7 @@ const primaryResult = document.getElementById("primary-result");
 const editToggle = document.getElementById("edit-toggle");
 const displayDelete = document.getElementById("display-delete");
 const displayClear = document.getElementById("display-clear");
+const appVersion = window.ORBIT_APP_VERSION || "dev";
 
 let expression = "0";
 let lastAnswer = 0;
@@ -177,6 +178,11 @@ function getEvaluationMessage(evaluated) {
   return "Error";
 }
 
+function getEvaluationStatusMessage(prefix, evaluated) {
+  const detail = evaluated && evaluated.message ? ` (${evaluated.message})` : "";
+  return `${prefix}${detail}`;
+}
+
 function loadHistory() {
   try {
     const saved = localStorage.getItem(storageKey);
@@ -305,7 +311,7 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
   if (normalized === "=") {
     const committed = commitResult();
     if (!committed.ok) {
-      setVoiceStatus(`Couldn't evaluate: ${originalTranscript || "="}`);
+      setVoiceStatus(getEvaluationStatusMessage(`Couldn't evaluate: ${originalTranscript || "="}`, committed));
     }
     return;
   }
@@ -326,7 +332,7 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
         : "Voice input captured";
       primaryResult.textContent = getEvaluationMessage(committed);
       resultOutput.textContent = "";
-      setVoiceStatus(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`);
+      setVoiceStatus(getEvaluationStatusMessage(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`, committed));
       return;
     }
 
@@ -344,7 +350,7 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
   expressionInput.value = "";
   primaryResult.textContent = getEvaluationMessage(evaluated);
   resultOutput.textContent = "";
-  setVoiceStatus(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`);
+  setVoiceStatus(getEvaluationStatusMessage(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`, evaluated));
 }
 
 function tryEvaluate(rawExpression) {
@@ -722,8 +728,9 @@ window.addEventListener("keydown", event => {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").then(registration => {
+    navigator.serviceWorker.register(`./sw.js?v=${appVersion}`).then(registration => {
       registration.update();
+      console.info(`Orbit Scientific build ${appVersion} loaded`);
 
       if (registration.waiting) {
         setVoiceStatus("Update available. Refresh once for the newest version.");

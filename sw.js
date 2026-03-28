@@ -1,10 +1,11 @@
-const CACHE_NAME = "orbit-scientific-v9";
+const APP_VERSION = "2026-03-28-v10";
+const CACHE_NAME = `orbit-scientific-${APP_VERSION}`;
 const APP_ASSETS = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./script.js",
-  "./voice-math.js",
+  `./styles.css?v=${APP_VERSION}`,
+  `./script.js?v=${APP_VERSION}`,
+  `./voice-math.js?v=${APP_VERSION}`,
   "./calculator-test-cases.js",
   "./calculator-tests.html",
   "./voice-parser-cases.js",
