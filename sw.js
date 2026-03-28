@@ -1,9 +1,12 @@
-const CACHE_NAME = "orbit-scientific-v5";
+const CACHE_NAME = "orbit-scientific-v6";
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./script.js",
+  "./voice-math.js",
+  "./voice-parser-cases.js",
+  "./voice-parser-tests.html",
   "./manifest.json",
   "./icons/icon.svg"
 ];

@@ -5,14 +5,18 @@ A responsive scientific calculator built as a static web app with:
 - desktop and mobile friendly UI
 - scientific functions and constants
 - calculation history and memory controls
-- voice input with parsed-expression feedback
+- voice input powered by a shared parser/evaluator module
 - installable PWA support
+- a browser-based voice parser regression test page
 
 ## Project Files
 
 - `index.html`: app structure
 - `styles.css`: responsive layout and visual design
 - `script.js`: calculator logic, voice parsing, editing, and UI behavior
+- `voice-math.js`: shared spoken-math parser and evaluator
+- `voice-parser-cases.js`: reusable voice test matrix
+- `voice-parser-tests.html`: in-browser regression harness for voice parsing
 - `sw.js`: service worker for offline support and update handling
 - `manifest.json`: PWA manifest
 - `icons/icon.svg`: app icon
@@ -48,16 +52,32 @@ git push
 
 Voice input works best in Chromium-based browsers that support the Web Speech API.
 
-The UI shows:
+The parser and evaluator are centralized in `voice-math.js`, so typed and spoken scientific expressions do not rely on scattered one-off replacements anymore.
 
-- `Heard`: the raw speech transcript
-- `Parsed`: the calculator expression built from that transcript
+The small voice debug area stays hidden until there is actual transcript or parsed content to show.
 
-This makes it easier to debug phrases that were recognized incorrectly by the browser.
+## Voice Regression Harness
+
+Open `voice-parser-tests.html` in a browser to run the shared parser against a fixed matrix of phrases.
+
+It covers:
+
+- arithmetic
+- percentages
+- powers
+- roots
+- logs
+- trig and inverse trig
+- spoken-number phrases
+- punctuation cleanup
+- expected parse failures
+
+Use this page after parser changes before you redeploy the main app.
 
 ## PWA / Cache Notes
 
 - The app uses a service worker for offline support
+- `voice-math.js` and the voice test assets are also cached by the service worker
 - After a redeploy, a refresh may be needed once to load the newest version
 - If the UI says an update is available, refresh the page
 - If an installed mobile app still looks stale, close and reopen it after refresh
@@ -94,9 +114,12 @@ Test these spoken phrases:
 
 Check that:
 
-- `Heard` shows the browser transcript
-- `Parsed` shows a valid calculator expression
+- the debug row only appears when there is real voice content
+- the transcript shows the browser transcript when voice input is used
+- the parser produces a valid calculator expression
 - the result appears in the main result area
+
+Also open `voice-parser-tests.html` and confirm the matrix passes before shipping parser changes.
 
 ### Editing
 
@@ -125,3 +148,4 @@ Check that:
 - Voice quality depends on the browser speech engine
 - Some trig functions are undefined for certain inputs and should show `Error`
 - Browser caching can make an old build appear briefly until refresh
+- The browser test harness verifies parsing and evaluation logic, but it does not replace live microphone testing on target devices

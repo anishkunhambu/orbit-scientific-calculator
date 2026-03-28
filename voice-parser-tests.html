@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbit Voice Parser Tests</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", Arial, sans-serif;
+      background: #f7f4eb;
+      color: #17211b;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+    }
+
+    .summary {
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #fffdf8;
+      border: 1px solid rgba(23, 33, 27, 0.12);
+    }
+
+    .summary strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fffdf8;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(23, 33, 27, 0.08);
+      vertical-align: top;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #eef3fb;
+    }
+
+    .pass {
+      color: #1f6f43;
+      font-weight: 700;
+    }
+
+    .fail {
+      color: #b03d1e;
+      font-weight: 700;
+    }
+
+    code {
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    .category {
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .meta {
+      color: #65726a;
+      font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 16px;
+      }
+
+      table,
+      thead,
+      tbody,
+      tr,
+      th,
+      td {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 14px;
+        border: 1px solid rgba(23, 33, 27, 0.08);
+        border-radius: 14px;
+        background: #fffdf8;
+        overflow: hidden;
+      }
+
+      td {
+        border-bottom: 1px solid rgba(23, 33, 27, 0.06);
+      }
+
+      td:last-child {
+        border-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Voice Parser Test Matrix</h1>
+    <div class="summary" id="summary">
+      <strong>Running tests...</strong>
+      <span class="meta">This page verifies the shared voice parser and evaluator without relying on live microphone input.</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Phrase</th>
+          <th>Parsed</th>
+          <th>Result</th>
+          <th>Expected</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+  </main>
+
+  <script src="voice-math.js"></script>
+  <script src="voice-parser-cases.js"></script>
+  <script>
+    const tbody = document.getElementById("results");
+    let passCount = 0;
+    const totalCount = window.VoiceMathCases.length;
+
+    function nearlyEqual(left, right) {
+      return Math.abs(left - right) < 1e-9;
+    }
+
+    window.VoiceMathCases.forEach(testCase => {
+      const parsed = window.VoiceMath.parseSpokenMath(testCase.phrase);
+      const evaluated = window.VoiceMath.tryEvaluate(parsed, {
+        lastAnswer: 0,
+        isDegreeMode: true
+      });
+
+      const ok = testCase.expectParseFailure
+        ? !parsed
+        : parsed && evaluated.ok && nearlyEqual(evaluated.value, testCase.expectedValue);
+
+      if (ok) {
+        passCount += 1;
+      }
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td class="category">${testCase.category}</td>
+        <td><code>${testCase.phrase}</code></td>
+        <td><code>${parsed || "UNPARSED"}</code></td>
+        <td><code>${evaluated.ok ? evaluated.value : "ERROR"}</code></td>
+        <td><code>${testCase.expectParseFailure ? "UNPARSED" : testCase.expectedValue}</code></td>
+        <td class="${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    document.getElementById("summary").innerHTML =
+      `<strong>${passCount}/${totalCount} test phrases passed</strong>
+       <span class="meta">Use this page after parser changes to catch regressions before redeploying.</span>`;
+  </script>
+</body>
+</html>
