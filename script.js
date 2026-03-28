@@ -200,8 +200,8 @@ function setVoiceStatus(message) {
 }
 
 function setVoiceDebug(heard = "-", parsed = "-") {
-  voiceHeard.textContent = `Heard: ${heard}`;
-  voiceParsed.textContent = `Parsed: ${parsed}`;
+  voiceHeard.textContent = heard;
+  voiceParsed.textContent = parsed;
 }
 
 function setListeningState(listening) {
