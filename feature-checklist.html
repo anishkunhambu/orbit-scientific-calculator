@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbit Feature Checklist</title>
+  <style>
+    :root {
+      --bg: #f7f4eb;
+      --card: #fffdf8;
+      --ink: #17211b;
+      --muted: #66756a;
+      --line: rgba(23, 33, 27, 0.12);
+      --accent: #e9efe2;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+    }
+
+    .intro {
+      margin: 0 0 20px;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    li {
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+
+    .note {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: var(--accent);
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Feature Verification Checklist</h1>
+    <p class="intro">Use this page as the manual test companion for desktop, mobile, voice, editing, history, and PWA behavior.</p>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Core Input</h2>
+        <ul>
+          <li>Type `2+3` and confirm result `5`.</li>
+          <li>Press `AC` and confirm expression clears cleanly.</li>
+          <li>Use `DEL` to remove one character at a time.</li>
+          <li>Use keyboard digits/operators on desktop when not editing.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Scientific Math</h2>
+        <ul>
+          <li>Check `sqrt(81)` gives `9`.</li>
+          <li>Check `log(100)` gives `2`.</li>
+          <li>Check `ln(e)` gives `1`.</li>
+          <li>Check `5!` gives `120`.</li>
+          <li>Check `17% of 330` gives `56.1`.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Angle Modes</h2>
+        <ul>
+          <li>In `RAD`, confirm `sin(pi/2)` gives `1`.</li>
+          <li>Toggle to `DEG`, confirm `sin(30)` gives `0.5`.</li>
+          <li>Check `cos(60)` gives `0.5` in `DEG`.</li>
+          <li>Check `atan(1)` gives `45` in `DEG`.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Voice Input</h2>
+        <ul>
+          <li>Try `log of 10` and confirm result `1`.</li>
+          <li>Try `square root of 2` and confirm no stale manual display remains.</li>
+          <li>Try `2 raised to 2` and confirm result `4`.</li>
+          <li>Try `cube of 9` and confirm result `729`.</li>
+          <li>Try an invalid phrase and confirm old results do not remain on screen.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Edit Mode</h2>
+        <ul>
+          <li>Tap `Edit`, place the cursor in the middle, and type.</li>
+          <li>Use `Delete` and confirm it removes at the caret position.</li>
+          <li>Press `Enter` to evaluate and exit edit mode.</li>
+          <li>Confirm desktop shortcuts do not interfere while editing.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>History and Memory</h2>
+        <ul>
+          <li>Confirm successful calculations add entries to history.</li>
+          <li>Confirm failed voice parses do not create fake success history entries.</li>
+          <li>Use `M+`, `M-`, `MR`, and `MC` and verify memory indicator updates.</li>
+          <li>Use `ANS` and confirm it inserts the previous answer.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Mobile Layout</h2>
+        <ul>
+          <li>Check portrait keypad order is natural on phone.</li>
+          <li>Check result stays readable and controls stay tappable.</li>
+          <li>Check history shifts below or alongside gracefully depending on width.</li>
+          <li>Check no overflow/crowding in the display area.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>PWA and Updates</h2>
+        <ul>
+          <li>Deploy changes and refresh once.</li>
+          <li>Confirm updated JS/CSS loads after redeploy.</li>
+          <li>If installed, reopen the app and confirm the new build appears.</li>
+          <li>Confirm stale parser behavior does not persist after refresh.</li>
+        </ul>
+      </article>
+    </section>
+
+    <div class="note">
+      Best workflow: run <code>calculator-tests.html</code>, run <code>voice-parser-tests.html</code>, then use this checklist for live desktop/mobile verification.
+    </div>
+  </main>
+</body>
+</html>

@@ -15,8 +15,11 @@ A responsive scientific calculator built as a static web app with:
 - `styles.css`: responsive layout and visual design
 - `script.js`: calculator logic, voice parsing, editing, and UI behavior
 - `voice-math.js`: shared spoken-math parser and evaluator
+- `calculator-test-cases.js`: reusable calculator engine test matrix
+- `calculator-tests.html`: in-browser regression harness for the math engine
 - `voice-parser-cases.js`: reusable voice test matrix
 - `voice-parser-tests.html`: in-browser regression harness for voice parsing
+- `feature-checklist.html`: manual verification checklist for UI and feature behavior
 - `sw.js`: service worker for offline support and update handling
 - `manifest.json`: PWA manifest
 - `icons/icon.svg`: app icon
@@ -73,6 +76,20 @@ It covers:
 - expected parse failures
 
 Use this page after parser changes before you redeploy the main app.
+
+## Full Testing Setup
+
+Use these three pages together:
+
+- `calculator-tests.html`: verifies calculator/evaluator logic
+- `voice-parser-tests.html`: verifies spoken-math parsing
+- `feature-checklist.html`: walks through desktop, mobile, voice, editing, history, memory, and PWA checks
+
+Recommended order:
+
+1. Run `calculator-tests.html`
+2. Run `voice-parser-tests.html`
+3. Use `feature-checklist.html` for live browser/device verification
 
 ## PWA / Cache Notes
 
