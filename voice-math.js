@@ -360,7 +360,149 @@
     normalized = normalized.replace(/factorial\(([^()]+)\.\)/g, "factorial($1)");
     normalized = normalized.replace(/percent\(([^()]+)\.\)/g, "percent($1)");
     normalized = normalized.replace(/cbrt\(([^()]+)\.\)/g, "cbrt($1)");
+    normalized = normalized.replace(/(safeTrig\("[a-z]+",\s*[^()]+\))\)+/g, "$1");
+    normalized = normalized.replace(/((?:Math\.(?:sqrt|log10|log|abs|exp)|cbrt|factorial|percent)\([^()]+\))\)+/g, "$1");
     return balanceParentheses(normalized);
+  }
+
+  function splitTopLevelBinary(input, operator) {
+    let depth = 0;
+    for (let index = 0; index < input.length; index += 1) {
+      const char = input[index];
+      const nextTwo = input.slice(index, index + 2);
+
+      if (char === "(") {
+        depth += 1;
+        continue;
+      }
+
+      if (char === ")") {
+        depth -= 1;
+        continue;
+      }
+
+      if (depth !== 0) {
+        continue;
+      }
+
+      if (operator === "**") {
+        if (nextTwo === "**") {
+          return [
+            input.slice(0, index).trim(),
+            input.slice(index + 2).trim()
+          ];
+        }
+        continue;
+      }
+
+      if (char === operator) {
+        return [
+          input.slice(0, index).trim(),
+          input.slice(index + 1).trim()
+        ];
+      }
+    }
+
+    return null;
+  }
+
+  function tryEvaluateDirectFunction(sanitized, options = {}) {
+    const { lastAnswer = 0, isDegreeMode = false } = options;
+
+    const trigMatch = sanitized.match(/^safeTrig\("([a-z]+)",\s*(.+)\)$/);
+    if (trigMatch) {
+      const argResult = tryEvaluate(trigMatch[2], { lastAnswer, isDegreeMode });
+      if (!argResult.ok) {
+        return argResult;
+      }
+      try {
+        return { ok: true, value: safeTrig(trigMatch[1], argResult.value, isDegreeMode) };
+      } catch (error) {
+        return { ok: false, message: error.message };
+      }
+    }
+
+    const directMatch = sanitized.match(/^(Math\.(sqrt|log10|log|abs|exp)|cbrt|factorial|percent)\((.+)\)$/);
+    if (!directMatch) {
+      return null;
+    }
+
+    const argResult = tryEvaluate(directMatch[3], { lastAnswer, isDegreeMode });
+    if (!argResult.ok) {
+      return argResult;
+    }
+
+    try {
+      switch (directMatch[1]) {
+        case "Math.sqrt":
+          return { ok: true, value: Math.sqrt(argResult.value) };
+        case "Math.log10":
+          return { ok: true, value: Math.log10(argResult.value) };
+        case "Math.log":
+          return { ok: true, value: Math.log(argResult.value) };
+        case "Math.abs":
+          return { ok: true, value: Math.abs(argResult.value) };
+        case "Math.exp":
+          return { ok: true, value: Math.exp(argResult.value) };
+        case "cbrt":
+          return { ok: true, value: Math.cbrt(argResult.value) };
+        case "factorial":
+          return { ok: true, value: factorial(argResult.value) };
+        case "percent":
+          return { ok: true, value: percent(argResult.value) };
+        default:
+          return null;
+      }
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
+  }
+
+  function tryEvaluateDirectBinary(sanitized, options = {}) {
+    const operators = ["**", "*", "/", "+", "-"];
+
+    for (const operator of operators) {
+      const parts = splitTopLevelBinary(sanitized, operator);
+      if (!parts) {
+        continue;
+      }
+
+      const [leftRaw, rightRaw] = parts;
+      if (!leftRaw || !rightRaw) {
+        return null;
+      }
+
+      const leftResult = tryEvaluate(leftRaw, options);
+      if (!leftResult.ok) {
+        return leftResult;
+      }
+
+      const rightResult = tryEvaluate(rightRaw, options);
+      if (!rightResult.ok) {
+        return rightResult;
+      }
+
+      try {
+        switch (operator) {
+          case "**":
+            return { ok: true, value: leftResult.value ** rightResult.value };
+          case "*":
+            return { ok: true, value: leftResult.value * rightResult.value };
+          case "/":
+            return { ok: true, value: leftResult.value / rightResult.value };
+          case "+":
+            return { ok: true, value: leftResult.value + rightResult.value };
+          case "-":
+            return { ok: true, value: leftResult.value - rightResult.value };
+          default:
+            return null;
+        }
+      } catch (error) {
+        return { ok: false, message: error.message };
+      }
+    }
+
+    return null;
   }
 
   function parseSpokenMath(transcript) {
@@ -485,6 +627,28 @@
         .replace(/ans/g, `(${lastAnswer})`)
         .replace(/Math\.PI/g, `(${Math.PI})`)
         .replace(/Math\.E/g, `(${Math.E})`);
+
+      const directFunctionResult = tryEvaluateDirectFunction(sanitized, { lastAnswer, isDegreeMode });
+      if (directFunctionResult) {
+        if (!directFunctionResult.ok) {
+          return directFunctionResult;
+        }
+        if (!Number.isFinite(directFunctionResult.value)) {
+          throw new Error("Result overflow.");
+        }
+        return directFunctionResult;
+      }
+
+      const directBinaryResult = tryEvaluateDirectBinary(sanitized, { lastAnswer, isDegreeMode });
+      if (directBinaryResult) {
+        if (!directBinaryResult.ok) {
+          return directBinaryResult;
+        }
+        if (!Number.isFinite(directBinaryResult.value)) {
+          throw new Error("Result overflow.");
+        }
+        return directBinaryResult;
+      }
 
       const evaluator = new Function(
         "factorial",
