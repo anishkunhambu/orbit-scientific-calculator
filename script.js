@@ -199,7 +199,7 @@ function setVoiceStatus(message) {
   voiceStatus.textContent = message;
 }
 
-function setVoiceDebug(heard = "-", parsed = "-") {
+function setVoiceDebug(heard = "", parsed = "") {
   voiceHeard.textContent = heard;
   voiceParsed.textContent = parsed;
 }
