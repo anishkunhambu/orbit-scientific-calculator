@@ -1,0 +1,13 @@
+{
+  "appId": "com.orbit.scientific",
+  "appName": "Orbit Scientific",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true
+    }
+  }
+}

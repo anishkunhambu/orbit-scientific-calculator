@@ -1,0 +1,23 @@
+window.VoiceMathCases = [
+  { category: "Arithmetic", phrase: "two plus three", expectedValue: 5 },
+  { category: "Arithmetic", phrase: "seven times eight", expectedValue: 56 },
+  { category: "Arithmetic", phrase: "nine divided by three", expectedValue: 3 },
+  { category: "Arithmetic", phrase: "25 minus 6", expectedValue: 19 },
+  { category: "Percent", phrase: "17 percent of 330", expectedValue: 56.1 },
+  { category: "Percent", phrase: "25 percent", expectedValue: 0.25 },
+  { category: "Power", phrase: "2 to the power 8", expectedValue: 256 },
+  { category: "Power", phrase: "2 raise to 2", expectedValue: 4 },
+  { category: "Power", phrase: "square of 9", expectedValue: 81 },
+  { category: "Power", phrase: "cube of 9", expectedValue: 729 },
+  { category: "Roots", phrase: "square root of 81", expectedValue: 9 },
+  { category: "Roots", phrase: "cube root of 64", expectedValue: 4 },
+  { category: "Logs", phrase: "log of 10", expectedValue: 1 },
+  { category: "Logs", phrase: "natural log of 10", expectedValue: Math.log(10) },
+  { category: "Trig", phrase: "sin 60", expectedValue: Math.sin(60 * Math.PI / 180) },
+  { category: "Trig", phrase: "cos 60", expectedValue: 0.5 },
+  { category: "Trig", phrase: "tan 45", expectedValue: 1 },
+  { category: "Inverse Trig", phrase: "inverse sine of 0.5", expectedValue: 30 },
+  { category: "Mixed", phrase: "square root of 81 plus 3", expectedValue: 12 },
+  { category: "Mixed", phrase: "sin 30 plus cos 60", expectedValue: 1 },
+  { category: "Invalid", phrase: "tell me something random", expectParseFailure: true }
+];

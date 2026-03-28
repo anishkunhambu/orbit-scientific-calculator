@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbit Calculator Engine Tests</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", Arial, sans-serif;
+      background: #f7f4eb;
+      color: #17211b;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+    }
+
+    p {
+      margin: 0 0 18px;
+      color: #65726a;
+    }
+
+    .summary {
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #fffdf8;
+      border: 1px solid rgba(23, 33, 27, 0.12);
+    }
+
+    .summary strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fffdf8;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(23, 33, 27, 0.08);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      background: #eef3fb;
+    }
+
+    code {
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    .pass {
+      color: #1f6f43;
+      font-weight: 700;
+    }
+
+    .fail {
+      color: #b03d1e;
+      font-weight: 700;
+    }
+
+    .category {
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 16px;
+      }
+
+      table,
+      thead,
+      tbody,
+      tr,
+      th,
+      td {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 14px;
+        border: 1px solid rgba(23, 33, 27, 0.08);
+        border-radius: 14px;
+        background: #fffdf8;
+        overflow: hidden;
+      }
+
+      td {
+        border-bottom: 1px solid rgba(23, 33, 27, 0.06);
+      }
+
+      td:last-child {
+        border-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Calculator Engine Test Matrix</h1>
+    <p>Use this page to verify the shared evaluator for core math functions, trig, overflow, and edge cases.</p>
+    <div class="summary" id="summary">
+      <strong>Running tests...</strong>
+      <span>This validates the underlying math engine without needing live button presses.</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Expression</th>
+          <th>Mode</th>
+          <th>Actual</th>
+          <th>Expected</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+  </main>
+
+  <script src="voice-math.js?v=2026-03-28-fresh-1"></script>
+  <script src="calculator-test-cases.js"></script>
+  <script>
+    const tbody = document.getElementById("results");
+    let passCount = 0;
+
+    function nearlyEqual(left, right) {
+      return Math.abs(left - right) < 1e-9;
+    }
+
+    window.CalculatorTestCases.forEach(testCase => {
+      const evaluated = window.VoiceMath.tryEvaluate(testCase.expression, {
+        lastAnswer: testCase.lastAnswer || 0,
+        isDegreeMode: Boolean(testCase.isDegreeMode)
+      });
+
+      const actual = evaluated.ok ? evaluated.value : evaluated.message;
+      const expected = testCase.expectedMessage || testCase.expectedValue;
+      const ok = testCase.expectedMessage
+        ? !evaluated.ok && evaluated.message === testCase.expectedMessage
+        : evaluated.ok && nearlyEqual(evaluated.value, testCase.expectedValue);
+
+      if (ok) {
+        passCount += 1;
+      }
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td class="category">${testCase.category}</td>
+        <td><code>${testCase.expression}</code></td>
+        <td>${testCase.isDegreeMode ? "DEG" : "RAD/default"}</td>
+        <td><code>${actual}</code></td>
+        <td><code>${expected}</code></td>
+        <td class="${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    document.getElementById("summary").innerHTML =
+      `<strong>${passCount}/${window.CalculatorTestCases.length} engine cases passed</strong>
+       <span>Run this after evaluator changes to catch math regressions quickly.</span>`;
+  </script>
+</body>
+</html>

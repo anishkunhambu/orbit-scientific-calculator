@@ -14,6 +14,8 @@ A fresh rebuild of the calculator with:
 - `styles.css`: responsive visual design
 - `script.js`: app state, keypad logic, edit mode, history, memory, and voice interaction
 - `voice-math.js`: shared expression evaluator and spoken-math parser
+- `package.json`: Capacitor/mobile packaging dependencies and scripts
+- `capacitor.config.json`: Capacitor app configuration
 
 ## Verification Files
 
@@ -22,6 +24,7 @@ A fresh rebuild of the calculator with:
 - `voice-parser-cases.js`: spoken phrase regression cases
 - `voice-parser-tests.html`: in-browser voice parser test page
 - `feature-checklist.html`: manual desktop/mobile verification checklist
+- `MOBILE_APP_GUIDE.md`: full Android/iOS setup and deployment walkthrough
 
 ## How To Run
 
@@ -45,6 +48,17 @@ git add .
 git commit -m "Rebuild scientific calculator"
 git push
 ```
+
+## Mobile App Packaging
+
+This project is prepared for Capacitor-based app packaging.
+
+Start with:
+
+1. Install Node.js
+2. Install Java + Android Studio
+3. Run `npm install`
+4. Follow [MOBILE_APP_GUIDE.md](C:\Users\anish\OneDrive\Documents\New%20project\MOBILE_APP_GUIDE.md)
 
 ## Notes
 
