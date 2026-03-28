@@ -327,8 +327,25 @@
     return compact;
   }
 
+  function balanceParentheses(input) {
+    let balance = 0;
+    for (const char of input) {
+      if (char === "(") {
+        balance += 1;
+      } else if (char === ")") {
+        balance -= 1;
+      }
+    }
+
+    if (balance > 0) {
+      return `${input}${")".repeat(balance)}`;
+    }
+
+    return input;
+  }
+
   function normalizeMathArtifacts(input) {
-    let normalized = compactParsedExpression(input);
+    let normalized = balanceParentheses(compactParsedExpression(input));
     normalized = normalized.replace(/\^/g, "**");
     normalized = normalized.replace(/(\d)\.(?=[\)\+\-\*\/]|$)/g, "$1");
     normalized = normalized.replace(/(?:Math\.){2,}/g, "Math.");
@@ -343,7 +360,7 @@
     normalized = normalized.replace(/factorial\(([^()]+)\.\)/g, "factorial($1)");
     normalized = normalized.replace(/percent\(([^()]+)\.\)/g, "percent($1)");
     normalized = normalized.replace(/cbrt\(([^()]+)\.\)/g, "cbrt($1)");
-    return normalized;
+    return balanceParentheses(normalized);
   }
 
   function parseSpokenMath(transcript) {
@@ -500,6 +517,7 @@
     parseSpokenMath,
     tryEvaluate,
     normalizeMathArtifacts,
+    balanceParentheses,
     compactParsedExpression,
     normalizeSpeechAliases,
     normalizeSpokenNumberPhrases
