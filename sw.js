@@ -1,4 +1,4 @@
-const CACHE_NAME = "orbit-scientific-v6";
+const CACHE_NAME = "orbit-scientific-v7";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -40,6 +40,9 @@ self.addEventListener("fetch", event => {
   const isNavigationRequest =
     event.request.mode === "navigate" ||
     (event.request.headers.get("accept") || "").includes("text/html");
+  const isLiveCodeAsset =
+    requestUrl.origin === self.location.origin &&
+    /\.(?:js|css)$/i.test(requestUrl.pathname);
 
   if (isNavigationRequest) {
     event.respondWith(
@@ -50,6 +53,23 @@ self.addEventListener("fetch", event => {
           return response;
         })
         .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
+  if (isLiveCodeAsset) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (!response || response.status !== 200 || response.type !== "basic") {
+            return response;
+          }
+
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }

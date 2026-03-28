@@ -322,13 +322,9 @@
   function normalizeMathArtifacts(input) {
     let normalized = compactParsedExpression(input);
     normalized = normalized.replace(/(\d)\.(?=[\)\+\-\*\/]|$)/g, "$1");
-    normalized = normalized.replace(/Math\.Math\./g, "Math.");
-    normalized = normalized.replace(/Math\.sqrt\s+([0-9.]+)/g, "Math.sqrt($1)");
-    normalized = normalized.replace(/Math\.log10\s+([0-9.]+)/g, "Math.log10($1)");
-    normalized = normalized.replace(/Math\.log\s+([0-9.]+)/g, "Math.log($1)");
-    normalized = normalized.replace(/Math\.abs\s+([0-9.]+)/g, "Math.abs($1)");
-    normalized = normalized.replace(/Math\.exp\s+([0-9.]+)/g, "Math.exp($1)");
-    normalized = normalized.replace(/cbrt\s+([0-9.]+)/g, "cbrt($1)");
+    normalized = normalized.replace(/(?:Math\.){2,}/g, "Math.");
+    normalized = normalized.replace(/\b(Math\.(?:sqrt|log10|log|abs|exp)|cbrt|factorial|percent)\s+(-?(?:\d+(?:\.\d+)?|ans|Math\.PI|Math\.E|\([^()]+\)))/g, "$1($2)");
+    normalized = normalized.replace(/safeTrig\("([a-z]+)",\s*(-?(?:\d+(?:\.\d+)?|ans|Math\.PI|Math\.E|\([^()]+\)))(?!\s*\))/g, 'safeTrig("$1", $2)');
     normalized = normalized.replace(/Math\.log10\(([^()]+)\.\)/g, "Math.log10($1)");
     normalized = normalized.replace(/Math\.log\(([^()]+)\.\)/g, "Math.log($1)");
     normalized = normalized.replace(/Math\.sqrt\(([^()]+)\.\)/g, "Math.sqrt($1)");
