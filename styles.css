@@ -471,6 +471,10 @@ h1 {
   font-size: 0.84rem;
 }
 
+.voice-debug[hidden] {
+  display: none;
+}
+
 .edit-row {
   display: flex;
   justify-content: flex-end;

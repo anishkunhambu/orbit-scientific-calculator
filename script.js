@@ -13,6 +13,7 @@ const shortcutPanel = document.getElementById("shortcut-panel");
 const installButton = document.getElementById("install-app");
 const voiceToggle = document.getElementById("voice-toggle");
 const voiceStatus = document.getElementById("voice-status");
+const voiceDebug = document.getElementById("voice-debug");
 const voiceHeard = document.getElementById("voice-heard");
 const voiceParsed = document.getElementById("voice-parsed");
 const primaryResult = document.getElementById("primary-result");
@@ -200,8 +201,18 @@ function setVoiceStatus(message) {
 }
 
 function setVoiceDebug(heard = "", parsed = "") {
-  voiceHeard.textContent = heard;
-  voiceParsed.textContent = parsed;
+  const heardValue = (heard || "").trim();
+  const parsedValue = (parsed || "").trim();
+
+  voiceHeard.textContent = heardValue;
+  voiceParsed.textContent = parsedValue;
+
+  if (!heardValue && !parsedValue) {
+    voiceDebug.hidden = true;
+    return;
+  }
+
+  voiceDebug.hidden = false;
 }
 
 function setListeningState(listening) {
@@ -743,7 +754,7 @@ function initializeVoiceRecognition() {
   recognition.addEventListener("start", () => {
     setListeningState(true);
     setVoiceStatus("Listening for a math expression...");
-    setVoiceDebug("Listening...", "-");
+    setVoiceDebug();
   });
 
   recognition.addEventListener("result", event => {
@@ -752,7 +763,7 @@ function initializeVoiceRecognition() {
       .join(" ");
 
     const parsedExpression = parseSpokenMath(transcript);
-    setVoiceDebug(transcript || "-", parsedExpression || "Unparsed");
+    setVoiceDebug(transcript, parsedExpression);
     if (!parsedExpression) {
       setVoiceStatus(`Couldn't parse: "${transcript}"`);
       return;
@@ -763,6 +774,9 @@ function initializeVoiceRecognition() {
 
   recognition.addEventListener("error", event => {
     setVoiceStatus(`Voice input error: ${event.error}`);
+    if (event.error === "no-speech") {
+      setVoiceDebug();
+    }
   });
 
   recognition.addEventListener("end", () => {
