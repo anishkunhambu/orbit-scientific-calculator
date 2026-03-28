@@ -303,7 +303,10 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
 
   const normalized = transcriptExpression.trim();
   if (normalized === "=") {
-    commitResult();
+    const committed = commitResult();
+    if (!committed.ok) {
+      setVoiceStatus(`Couldn't evaluate: ${originalTranscript || "="}`);
+    }
     return;
   }
 
@@ -316,7 +319,17 @@ function appendVoiceExpression(transcriptExpression, originalTranscript = "") {
   setExpression(normalized);
 
   if (evaluated.ok) {
-    commitResult();
+    const committed = commitResult();
+    if (!committed.ok) {
+      historyOutput.textContent = originalTranscript
+        ? `Voice heard: ${originalTranscript}`
+        : "Voice input captured";
+      primaryResult.textContent = getEvaluationMessage(committed);
+      resultOutput.textContent = "";
+      setVoiceStatus(`Couldn't evaluate: ${originalTranscript || formatPreview(normalized)}`);
+      return;
+    }
+
     clearSuspendedPreview();
     if (originalTranscript) {
       historyOutput.textContent = `Voice: ${originalTranscript}`;
@@ -409,7 +422,7 @@ function commitResult() {
     primaryResult.textContent = message;
     resultOutput.textContent = message;
     historyOutput.textContent = message === "Overflow" ? "Result overflow" : "Invalid expression";
-    return;
+    return evaluated;
   }
 
   lastAnswer = evaluated.value;
@@ -417,6 +430,7 @@ function commitResult() {
   historyOutput.textContent = `${formatPreview(expression)} =`;
   expression = formatNumber(evaluated.value);
   updateDisplay(formatNumber(evaluated.value));
+  return evaluated;
 }
 
 function handleFunction(fnName) {

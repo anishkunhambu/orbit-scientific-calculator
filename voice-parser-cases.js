@@ -7,6 +7,8 @@ window.VoiceMathCases = [
   { category: "Roots", phrase: "square root of 2", expectedValue: Math.sqrt(2) },
   { category: "Roots", phrase: "square root of 81", expectedValue: 9 },
   { category: "Roots", phrase: "cube root of 64", expectedValue: 4 },
+  { category: "Power", phrase: "square of 9", expectedValue: 81 },
+  { category: "Power", phrase: "cube of 9", expectedValue: 729 },
   { category: "Logs", phrase: "log of 25", expectedValue: Math.log10(25) },
   { category: "Logs", phrase: "log of 10", expectedValue: 1 },
   { category: "Logs", phrase: "log of 37.4", expectedValue: Math.log10(37.4) },

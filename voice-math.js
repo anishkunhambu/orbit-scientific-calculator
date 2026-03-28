@@ -136,6 +136,8 @@
     ["square root of", "__FN_SQRT__"],
     ["root of", "__FN_SQRT__"],
     ["cube root of", "__FN_CBRT__"],
+    ["square of", "__OP_SQUARE_OF__"],
+    ["cube of", "__OP_CUBE_OF__"],
     ["absolute value of", "__FN_ABS__"],
     ["modulus of", "__FN_ABS__"],
     ["mod of", "__FN_ABS__"],
@@ -417,6 +419,16 @@
     };
 
     tokens.forEach(token => {
+      if (token === "__OP_SQUARE_OF__") {
+        output.push("(");
+        stack.push(")**2");
+        return;
+      }
+      if (token === "__OP_CUBE_OF__") {
+        output.push("(");
+        stack.push(")**3");
+        return;
+      }
       if (canonicalVoiceFunctions[token]) {
         output.push(canonicalVoiceFunctions[token]);
         stack.push(")");
