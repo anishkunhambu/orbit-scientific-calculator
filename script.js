@@ -215,6 +215,12 @@ function setVoiceDebug(heard = "", parsed = "") {
   voiceDebug.hidden = false;
 }
 
+function resetVoiceResultState() {
+  historyOutput.textContent = "";
+  primaryResult.textContent = "";
+  resultOutput.textContent = "";
+}
+
 function setListeningState(listening) {
   isListening = listening;
   voiceToggle.setAttribute("aria-pressed", String(listening));
@@ -644,7 +650,7 @@ function parseSpokenMath(transcript) {
     parsed = parsed.replace(pattern, ` ${replacement} `);
   });
 
-  parsed = parsed.replace(/\bto the power of\b|\bpower of\b/g, "**");
+  parsed = parsed.replace(/\bto the power of\b|\bto the power\b|\bpower of\b|\braised to the power of\b|\braised to the power\b/g, "**");
   parsed = parsed.replace(/\bsquared\b/g, "**2");
   parsed = parsed.replace(/\bcubed\b/g, "**3");
   parsed = parsed.replace(/\braised to\b/g, "**");
@@ -755,6 +761,7 @@ function initializeVoiceRecognition() {
     setListeningState(true);
     setVoiceStatus("Listening for a math expression...");
     setVoiceDebug();
+    resetVoiceResultState();
   });
 
   recognition.addEventListener("result", event => {
@@ -765,6 +772,8 @@ function initializeVoiceRecognition() {
     const parsedExpression = parseSpokenMath(transcript);
     setVoiceDebug(transcript, parsedExpression);
     if (!parsedExpression) {
+      resetVoiceResultState();
+      historyOutput.textContent = `Voice heard: ${transcript}`;
       setVoiceStatus(`Couldn't parse: "${transcript}"`);
       return;
     }
@@ -774,6 +783,7 @@ function initializeVoiceRecognition() {
 
   recognition.addEventListener("error", event => {
     setVoiceStatus(`Voice input error: ${event.error}`);
+    resetVoiceResultState();
     if (event.error === "no-speech") {
       setVoiceDebug();
     }
