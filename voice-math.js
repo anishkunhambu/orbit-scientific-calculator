@@ -327,6 +327,10 @@
     return compact;
   }
 
+  function isSimpleVoiceArgument(token) {
+    return /^-?(?:\d+(?:\.\d+)?|ans|Math\.PI|Math\.E)$/i.test(token);
+  }
+
   function balanceParentheses(input) {
     let balance = 0;
     for (const char of input) {
@@ -577,41 +581,54 @@
       "__OP_POW__": "**"
     };
 
-    tokens.forEach(token => {
+    for (let index = 0; index < tokens.length; index += 1) {
+      const token = tokens[index];
+      const nextToken = tokens[index + 1];
+
       if (token === "__OP_SQUARE_OF__") {
         output.push("(");
         stack.push(")**2");
-        return;
+        continue;
       }
       if (token === "__OP_CUBE_OF__") {
         output.push("(");
         stack.push(")**3");
-        return;
+        continue;
       }
       if (canonicalVoiceFunctions[token]) {
+        if (isSimpleVoiceArgument(nextToken)) {
+          output.push(`${canonicalVoiceFunctions[token]}${nextToken})`);
+          index += 1;
+          continue;
+        }
         output.push(canonicalVoiceFunctions[token]);
         stack.push(")");
-        return;
+        continue;
       }
       if (operatorTokens[token]) {
         output.push(operatorTokens[token]);
-        return;
+        continue;
       }
       if (bareVoiceFunctions[token]) {
+        if (isSimpleVoiceArgument(nextToken)) {
+          output.push(`${bareVoiceFunctions[token]}${nextToken})`);
+          index += 1;
+          continue;
+        }
         output.push(bareVoiceFunctions[token]);
         stack.push(")");
-        return;
+        continue;
       }
       if (["(", ")", "+", "-", "*", "/", "**"].includes(token)) {
         output.push(token);
-        return;
+        continue;
       }
       if (/^[a-z]+$/i.test(token) && token !== "ans") {
         unknownWords.push(token);
-        return;
+        continue;
       }
       output.push(token);
-    });
+    }
 
     if (unknownWords.length > 0) {
       return "";
